@@ -1,13 +1,16 @@
 package hk.ust.cse.hunkim.questionroom;
 
+
 import android.app.ListActivity;
 import android.content.Intent;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -16,7 +19,10 @@ import android.widget.Toast;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
+
 import com.firebase.client.ValueEventListener;
+
+
 
 import hk.ust.cse.hunkim.questionroom.db.DBHelper;
 import hk.ust.cse.hunkim.questionroom.db.DBUtil;
@@ -25,12 +31,15 @@ import hk.ust.cse.hunkim.questionroom.question.Question;
 public class MainActivity extends ListActivity {
 
     // TODO: change this to your own Firebase URL
-    private static final String FIREBASE_URL = "https://classquestion.firebaseio.com/";
+    private static final String FIREBASE_URL = "https://ggwptest.firebaseio.com";
 
     private String roomName;
     private Firebase mFirebaseRef;
     private ValueEventListener mConnectedListener;
     private QuestionListAdapter mChatListAdapter;
+    private String StartTime;
+    private String EndTime;
+    private String Content;
 
     private DBUtil dbutil;
 
@@ -41,10 +50,11 @@ public class MainActivity extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         //initialized once with an Android context.
         Firebase.setAndroidContext(this);
-
+        StartTime = "";
+        EndTime = "";
+        Content = "";
         setContentView(R.layout.activity_main);
 
         Intent intent = getIntent();
@@ -125,6 +135,20 @@ public class MainActivity extends ListActivity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+
+
+        ListView listView = getListView();
+        QuestionListAdapter temChatListAdapter = new QuestionListAdapter(
+                mFirebaseRef.orderByChild("echo").limitToFirst(200),
+                this, R.layout.question, roomName, StartTime, EndTime, Content);
+        listView.setAdapter(temChatListAdapter);
+        temChatListAdapter.notifyDataSetChanged();
+    }
+
+
+    @Override
     public void onStop() {
         super.onStop();
         mFirebaseRef.getRoot().child(".info/connected").removeEventListener(mConnectedListener);
@@ -189,7 +213,31 @@ public class MainActivity extends ListActivity {
         dbutil.put(key);
     }
 
+
     public void Close(View view) {
         finish();
     }
-}
+
+
+    public void Search(View view) {
+        Intent intent = new Intent(this, SearchActivity.class);
+        intent.putExtra("Room Name", roomName);
+        startActivityForResult(intent, 1);
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_OK) {
+            String newStartTime = data.getExtras().getString("StartTime");
+            String newEndTime = data.getExtras().getString("EndTime");
+            String newContent = data.getExtras().getString("Content");
+            StartTime = newStartTime;
+            EndTime = newEndTime;
+            Content = newContent;
+        }
+    }
+};
+
+
+

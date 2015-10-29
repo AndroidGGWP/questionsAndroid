@@ -5,13 +5,20 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.text.Html;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.firebase.client.Query;
 
+import java.sql.Time;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.lang.String;
 
 import hk.ust.cse.hunkim.questionroom.db.DBUtil;
 import hk.ust.cse.hunkim.questionroom.question.Question;
@@ -29,14 +36,91 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
     private String roomName;
     MainActivity activity;
 
+    private String StartTime;
+    private String EndTime;
+    private String Content;
+
+
+
     public QuestionListAdapter(Query ref, Activity activity, int layout, String roomName) {
         super(ref, Question.class, layout, activity);
-
+        StartTime="";
+        EndTime="";
+        Content="";
         // Must be MainActivity
         assert (activity instanceof MainActivity);
 
         this.activity = (MainActivity) activity;
     }
+
+    public QuestionListAdapter(Query ref, Activity activity, int layout, String roomName, String Starttime, String Endtime, String content) {
+        super(ref, Question.class, layout, activity);
+        StartTime=Starttime;
+        EndTime=Endtime;
+        Content=content;
+        // Must be MainActivity
+        assert (activity instanceof MainActivity);
+
+        this.activity = (MainActivity) activity;
+    }
+
+
+
+    private long GetTimeLimit(String Time) {
+        long currentTime= System.currentTimeMillis();
+        long returnTime=0;
+        if (Time.contains("Now")){
+            returnTime=currentTime;
+        } else if (Time.contains("1 hour ago")){
+            returnTime=currentTime-3600*1000;
+        } else if (Time.contains("2 hours ago")){
+            returnTime=currentTime-2*3600*1000;
+        } else if (Time.contains("1 day ago")){
+            returnTime=currentTime-24*3600*1000;
+        } else if (Time.contains("1 week ago")){
+            returnTime=currentTime-7*24*3600*1000;
+        } else if (Time.contains("30 days ago")){
+            returnTime=currentTime- 2592000000L;
+        } else if (Time.contains("365 days ago")){
+            returnTime=currentTime-31536000000L;
+        } else if (Time.contains("The Start")){
+            returnTime=0L;
+        }
+        return returnTime;
+    }
+
+
+
+
+    public boolean search_valid(Question model){
+        String wholeMsg=model.getHead()+model.getDesc();
+        if (Content.equals("") || wholeMsg.contains(Content)) {
+            if (StartTime.equals("") && EndTime.equals("")){
+                return true;
+            } else {
+                if (StartTime.contains("All") || EndTime.contains("All")){
+                    return true;
+                }
+                long BeginTime = GetTimeLimit(StartTime);
+                long UntilTime = GetTimeLimit(EndTime);
+
+
+                long QuestionTime = model.getTimestamp();
+                if (QuestionTime <= UntilTime && QuestionTime >= BeginTime) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        } else {
+            return false;
+        }
+    }
+
+
+
+
+
 
     /**
      * Bind an instance of the <code>Chat</code> class to our view. This method is called by <code>FirebaseListAdapter</code>
@@ -79,7 +163,16 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
 
         msgString += "<B>" + question.getHead() + "</B>" + question.getDesc();
 
+
+        //String Time=String.valueOf(question.getTimestamp());
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        String Time  = dateFormat.format(new Date(question.getTimestamp()));
+        //Date date = new Date(time);
+        //Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
+        //String Time=format.format(date);
         ((TextView) view.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
+        //((TextView) view.findViewById(R.id.timestamp)).setText(Time);
         view.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
@@ -119,4 +212,6 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
     protected void setKey(String key, Question model) {
         model.setKey(key);
     }
+
+
 }
