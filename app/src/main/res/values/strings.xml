@@ -9,5 +9,16 @@
 
     <string name="error_invalid_room_name">Use only alphanumeric characters</string>
     <string name="error_field_required">This field is required</string>
-
+    <string name="country_prompt">Choose a country</string>
+    <string-array name="country_arrays">
+        <item>All</item>
+        <item>Now</item>
+        <item>1 hour ago</item>
+        <item>2 hours ago</item>
+        <item>1 day ago</item>
+        <item>1 week ago</item>
+        <item>30 days ago</item>
+        <item>365 days ago</item>
+        <item>The Start</item>
+    </string-array>
 </resources>
