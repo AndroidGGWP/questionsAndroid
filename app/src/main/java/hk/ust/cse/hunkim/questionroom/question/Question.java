@@ -1,6 +1,10 @@
 package hk.ust.cse.hunkim.questionroom.question;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
+import hk.ust.cse.hunkim.questionroom.FirebaseListAdapter;
 
 /**
  * Created by hunkim on 7/16/15.
@@ -23,6 +27,8 @@ public class Question implements Comparable<Question> {
     private int echo;
     private int order;
     private boolean newQuestion;
+    private int numOfReplies;
+    private List<Reply> replies;
 
     public String getDateString() {
         return dateString;
@@ -58,6 +64,9 @@ public class Question implements Comparable<Question> {
         this.headLastChar = head.substring(head.length() - 1);
 
         this.timestamp = new Date().getTime();
+        this.numOfReplies = 0;
+        this.replies = new ArrayList<Reply>();
+        this.replies.add(new Reply(""));
     }
 
     /**
@@ -134,6 +143,10 @@ public class Question implements Comparable<Question> {
     public boolean isNewQuestion() {
         return newQuestion;
     }
+
+    public int getNumOfReplies() { return numOfReplies; }
+
+    public List<Reply> getReplies() { return replies; }
 
     public void updateNewQuestion() {
         newQuestion = this.timestamp > new Date().getTime() - 180000;

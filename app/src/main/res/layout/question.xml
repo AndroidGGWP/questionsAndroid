@@ -5,6 +5,12 @@
     android:layout_height="fill_parent"
     android:orientation="horizontal">
 
+    <TextView
+        android:id="@+id/timestamp"
+        android:text="Time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
     <Button
         android:id="@+id/echo"
         android:drawableLeft="@drawable/like24"
@@ -13,7 +19,12 @@
 
     <TextView
         android:id="@+id/head_desc"
+        android:text="Content"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="5dp" />
+
+
+
 </LinearLayout>
+

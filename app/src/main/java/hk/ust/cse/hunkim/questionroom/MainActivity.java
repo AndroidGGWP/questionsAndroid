@@ -31,7 +31,7 @@ import hk.ust.cse.hunkim.questionroom.question.Question;
 public class MainActivity extends ListActivity {
 
     // TODO: change this to your own Firebase URL
-    private static final String FIREBASE_URL = "https://ggwptest.firebaseio.com";
+    private static final String FIREBASE_URL = "https://ggwptest.firebaseio.com/";
 
     private String roomName;
     private Firebase mFirebaseRef;
@@ -178,10 +178,11 @@ public class MainActivity extends ListActivity {
                 new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long echoValue = (Long) dataSnapshot.getValue();
-                        Log.e("Echo update:", "" + echoValue);
+                            Long echoValue = (Long) dataSnapshot.getValue();
+                            Log.e("Echo update:", "" + echoValue);
 
-                        echoRef.setValue(echoValue + 1);
+                            echoRef.setValue(echoValue + 1);
+
                     }
 
                     @Override
@@ -211,12 +212,35 @@ public class MainActivity extends ListActivity {
 
         // Update SQLite DB
         dbutil.put(key);
+
     }
 
 
     public void Close(View view) {
         finish();
     }
+
+    public void Reset_Search(View view){
+        StartTime="";
+        EndTime="";
+        Content="";
+        ListView listView = getListView();
+        QuestionListAdapter temChatListAdapter = new QuestionListAdapter(
+                mFirebaseRef.orderByChild("echo").limitToFirst(200),
+                this, R.layout.question, roomName);
+        listView.setAdapter(temChatListAdapter);
+    }
+
+
+
+    public void enterReply(String key) {
+        Intent intent = new Intent(this, ReplyActivity.class);
+        intent.putExtra("questionRef", FIREBASE_URL+roomName+"/questions/"+key);
+        startActivity(intent);
+    }
+
+
+
 
 
     public void Search(View view) {

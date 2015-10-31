@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import hk.ust.cse.hunkim.questionroom.question.Question;
 
 /**
  * @param <T> The class type to use as a model for the data contained in the children of the given Firebase location
@@ -97,61 +96,69 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
                 // One of the mModels changed. Replace it in our list and name mapping
-                String modelName = dataSnapshot.getKey();
-                T oldModel = mModelKeys.get(modelName);
+
                 T newModel = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                if (search_valid(newModel)) {
+                    String modelName = dataSnapshot.getKey();
+                    T oldModel = mModelKeys.get(modelName);
+                    // TOFIX: Any easy way to ser key?
+                    setKey(modelName, newModel);
 
-                // TOFIX: Any easy way to ser key?
-                setKey(modelName, newModel);
+                    int index = mModels.indexOf(oldModel);
+                    mModels.set(index, newModel);
 
 
-                int index = mModels.indexOf(oldModel);
-                mModels.set(index, newModel);
+                    // update map
+                    mModelKeys.put(modelName, newModel);
 
-
-                // update map
-                mModelKeys.put(modelName, newModel);
-
-                notifyDataSetChanged();
+                    notifyDataSetChanged();
+                }
             }
 
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
 
-                // A model was removed from the list. Remove it from our list and the name mapping
-                String modelName = dataSnapshot.getKey();
-                T oldModel = mModelKeys.get(modelName);
-                mModels.remove(oldModel);
-                mModelKeys.remove(modelName);
-                notifyDataSetChanged();
+                T newModel = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                if (search_valid(newModel)) {
+
+                    // A model was removed from the list. Remove it from our list and the name mapping
+                    String modelName = dataSnapshot.getKey();
+                    T oldModel = mModelKeys.get(modelName);
+                    mModels.remove(oldModel);
+                    mModelKeys.remove(modelName);
+                    notifyDataSetChanged();
+                }
             }
 
             @Override
             public void onChildMoved(DataSnapshot dataSnapshot, String previousChildName) {
 
                 // A model changed position in the list. Update our list accordingly
-                String modelName = dataSnapshot.getKey();
-                T oldModel = mModelKeys.get(modelName);
+
                 T newModel = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                if (search_valid(newModel)) {
 
-                // TOFIX: Any easy way to ser key?
-                setKey(modelName, newModel);
+                    String modelName = dataSnapshot.getKey();
+                    T oldModel = mModelKeys.get(modelName);
+                    // TOFIX: Any easy way to ser key?
+                    setKey(modelName, newModel);
 
-                int index = mModels.indexOf(oldModel);
-                mModels.remove(index);
-                if (previousChildName == null) {
-                    mModels.add(0, newModel);
-                } else {
-                    T previousModel = mModelKeys.get(previousChildName);
-                    int previousIndex = mModels.indexOf(previousModel);
-                    int nextIndex = previousIndex + 1;
-                    if (nextIndex == mModels.size()) {
-                        mModels.add(newModel);
+                    int index = mModels.indexOf(oldModel);
+                    mModels.remove(index);
+                    if (previousChildName == null) {
+                        mModels.add(0, newModel);
                     } else {
-                        mModels.add(nextIndex, newModel);
+                        T previousModel = mModelKeys.get(previousChildName);
+                        int previousIndex = mModels.indexOf(previousModel);
+                        int nextIndex = previousIndex + 1;
+                        if (nextIndex == mModels.size()) {
+                            mModels.add(newModel);
+                        } else {
+                            mModels.add(nextIndex, newModel);
+                        }
                     }
+                    notifyDataSetChanged();
                 }
-                notifyDataSetChanged();
             }
 
             @Override

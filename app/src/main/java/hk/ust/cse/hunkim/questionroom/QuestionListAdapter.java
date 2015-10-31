@@ -5,15 +5,11 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.text.Html;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.firebase.client.Query;
 
-import java.sql.Time;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -131,7 +127,8 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
      * @param question An instance representing the current state of a chat message
      */
     @Override
-    protected void populateView(View view, Question question) {
+    protected void populateView(View view, Question question1) {
+        final Question question=question1;
         DBUtil dbUtil = activity.getDbutil();
 
         // Map a Chat object to an entry in our listview
@@ -172,12 +169,16 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
         //Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
         //String Time=format.format(date);
         ((TextView) view.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
-        //((TextView) view.findViewById(R.id.timestamp)).setText(Time);
+        ((TextView) view.findViewById(R.id.timestamp)).setText(Time);
+
+
         view.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
                                         MainActivity m = (MainActivity) view.getContext();
-                                        m.updateEcho((String) view.getTag());
+                                        m.enterReply(question.getKey());
+                                        //m.updateEcho((String) view.getTag());
+                                        //notifyDataSetChanged();
                                     }
                                 }
 
@@ -188,7 +189,10 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
 
         echoButton.setClickable(clickable);
         echoButton.setEnabled(clickable);
-        view.setClickable(clickable);
+        //view.setClickable(clickable);
+
+
+
 
 
         // http://stackoverflow.com/questions/8743120/how-to-grey-out-a-button

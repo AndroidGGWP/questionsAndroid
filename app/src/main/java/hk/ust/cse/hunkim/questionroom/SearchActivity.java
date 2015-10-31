@@ -50,39 +50,39 @@ public class SearchActivity extends AppCompatActivity {
 
     }
 
-    //    public void addListenerOnSpinnerItemSelection() {
+//    public void addListenerOnSpinnerItemSelection() {
 //        Spinner spinner1 = (Spinner) findViewById(R.id.Time_spinner);
 //        spinner1.setOnItemSelectedListener(new CustomOnItemSelectedListener());
 //    }
-    public void addListenerOnButton() {
+public void addListenerOnButton() {
 
-        final Spinner StartTime_spinner = (Spinner) findViewById(R.id.StartTime_spinner);
-        final Spinner EndTime_spinner = (Spinner) findViewById(R.id.EndTime_spinner);
-        final EditText SearchContent=(EditText)    findViewById(R.id.ContentFilter);
-        btnSubmit = (Button) findViewById(R.id.btnSubmit);
+    final Spinner StartTime_spinner = (Spinner) findViewById(R.id.StartTime_spinner);
+    final Spinner EndTime_spinner = (Spinner) findViewById(R.id.EndTime_spinner);
+    final EditText SearchContent=(EditText)    findViewById(R.id.ContentFilter);
+    btnSubmit = (Button) findViewById(R.id.btnSubmit);
 
-        btnSubmit.setOnClickListener(new OnClickListener() {
+    btnSubmit.setOnClickListener(new OnClickListener() {
 
-            @Override
-            public void onClick(View v) {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-                String Time1 = dateFormat.format(new Date(System.currentTimeMillis()));
-                Toast.makeText(SearchActivity.this,
-                        "OnClickListener : " +
-                                "\nStart Time : " + String.valueOf(StartTime_spinner.getSelectedItem()) +
-                                "\nEnd Time : " + String.valueOf(EndTime_spinner.getSelectedItem()) +
-                                "\nSearch Content : " + SearchContent.getText().toString() +
-                                "\nCurrent Time is :" + Time1,
-                        Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent();
-                intent.putExtra("StartTime", String.valueOf(StartTime_spinner.getSelectedItem()));
-                intent.putExtra("EndTime", String.valueOf(EndTime_spinner.getSelectedItem()));
-                intent.putExtra("Content", SearchContent.getText().toString());
-                SearchActivity.this.setResult(RESULT_OK, intent);
-                SearchActivity.this.finish();
-            }
+        @Override
+        public void onClick(View v) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+            String Time1  = dateFormat.format(new Date(System.currentTimeMillis()));
+            Toast.makeText(SearchActivity.this,
+                    "OnClickListener : " +
+                            "\nStart Time : "+ String.valueOf(StartTime_spinner.getSelectedItem()) +
+                            "\nEnd Time : "+ String.valueOf(EndTime_spinner.getSelectedItem())+
+                            "\nSearch Content : "+SearchContent.getText().toString()+
+                            "\nCurrent Time is :"+Time1,
+                    Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent();
+            intent.putExtra("StartTime", String.valueOf(StartTime_spinner.getSelectedItem()));
+            intent.putExtra("EndTime", String.valueOf(EndTime_spinner.getSelectedItem()));
+            intent.putExtra("Content", SearchContent.getText().toString());
+            SearchActivity.this.setResult(RESULT_OK, intent);
+            SearchActivity.this.finish();
+        }
 
-        });
-    }
+    });
+}
 
 }
