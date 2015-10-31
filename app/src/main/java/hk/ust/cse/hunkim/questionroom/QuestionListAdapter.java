@@ -3,9 +3,13 @@ package hk.ust.cse.hunkim.questionroom;
 import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.media.Image;
 import android.text.Html;
+import android.text.SpannableString;
+import android.text.util.Linkify;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.firebase.client.Query;
@@ -15,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import java.text.SimpleDateFormat;
 import java.lang.String;
+import java.util.regex.Pattern;
 
 import hk.ust.cse.hunkim.questionroom.db.DBUtil;
 import hk.ust.cse.hunkim.questionroom.question.Question;
@@ -35,8 +40,6 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
     private String StartTime;
     private String EndTime;
     private String Content;
-
-
 
     public QuestionListAdapter(Query ref, Activity activity, int layout, String roomName) {
         super(ref, Question.class, layout, activity);
@@ -59,8 +62,6 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
 
         this.activity = (MainActivity) activity;
     }
-
-
 
     private long GetTimeLimit(String Time) {
         long currentTime= System.currentTimeMillis();
@@ -85,12 +86,9 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
         return returnTime;
     }
 
-
-
-
     public boolean search_valid(Question model){
         String wholeMsg=model.getHead()+model.getDesc();
-        if (Content.equals("") || wholeMsg.contains(Content)) {
+        if (Content.equals("") || (wholeMsg+" ").contains(Content)) {
             if (StartTime.equals("") && EndTime.equals("")){
                 return true;
             } else {
@@ -113,11 +111,6 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
         }
     }
 
-
-
-
-
-
     /**
      * Bind an instance of the <code>Chat</code> class to our view. This method is called by <code>FirebaseListAdapter</code>
      * when there is a data change, and we are given an instance of a View that corresponds to the layout that we passed
@@ -130,16 +123,14 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
     protected void populateView(View view, Question question1) {
         final Question question=question1;
         DBUtil dbUtil = activity.getDbutil();
+        //int echo = question.getEcho();
+        //echoButton.setText("" + echo);
+        //echoButton.setTextColor(Color.BLUE);
+        //((TextView) view.findViewById(R.id.echonum)).setText(question.getEcho());
 
-        // Map a Chat object to an entry in our listview
-        int echo = question.getEcho();
-        Button echoButton = (Button) view.findViewById(R.id.echo);
-        echoButton.setText("" + echo);
-        echoButton.setTextColor(Color.BLUE);
-
-
+        ImageButton echoButton = (ImageButton) view.findViewById(R.id.echo);
+        ((TextView) view.findViewById(R.id.echonum)).setText(("" + question.getEcho()));
         echoButton.setTag(question.getKey()); // Set tag for button
-
         echoButton.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
@@ -148,11 +139,26 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
                         m.updateEcho((String) view.getTag());
                     }
                 }
+        );
 
+        //int dislikes = question.getDislikes();
+        //echoButton.setText("" + echo);
+        //echoButton.setTextColor(Color.BLUE);
+        //((TextView) view.findViewById(R.id.dislikenum)).setText(question.getDislikes());
+        ImageButton dislikeButton = (ImageButton) view.findViewById(R.id.dislike);
+        ((TextView) view.findViewById(R.id.dislikenum)).setText(("" + question.getDislikes()));
+        dislikeButton.setTag(question.getKey()); // Set tag for button
+        dislikeButton.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        MainActivity m = (MainActivity) view.getContext();
+                        m.updateDislikes((String) view.getTag());
+                    }
+                }
         );
 
         String msgString = "";
-
         question.updateNewQuestion();
         if (question.isNewQuestion()) {
             msgString += "<font color=red>NEW </font>";
@@ -160,48 +166,49 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
 
         msgString += "<B>" + question.getHead() + "</B>" + question.getDesc();
 
-
-        //String Time=String.valueOf(question.getTimestamp());
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-        String Time  = dateFormat.format(new Date(question.getTimestamp()));
-        //Date date = new Date(time);
-        //Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
-        //String Time=format.format(date);
         ((TextView) view.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
-        ((TextView) view.findViewById(R.id.timestamp)).setText(Time);
+
+        TextView hashView = (TextView) view.findViewById(R.id.head_desc);
+        SpannableString ss = new SpannableString(hashView.getText().toString());
+        Pattern tagPattern = Pattern.compile("[#]+[A-Za-z0-9-_]+\\b");
+        //Matcher tagMatcher = tagPattern.matcher(ss);
+
+        String newActivityURL = "tag";
+        Linkify.addLinks(hashView, tagPattern, newActivityURL);
 
 
-        view.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View view) {
-                                        MainActivity m = (MainActivity) view.getContext();
-                                        m.enterReply(question.getKey());
-                                        //m.updateEcho((String) view.getTag());
-                                        //notifyDataSetChanged();
-                                    }
-                                }
+        TimeDisplay timeDisplay = new TimeDisplay(question.getTimestamp());
+        ((TextView) view.findViewById(R.id.timestamp)).setText(timeDisplay.getOutputTime());
 
-        );
+
+        ImageButton replyButton = (ImageButton) view.findViewById(R.id.reply);
+        ((TextView) view.findViewById(R.id.replynum)).setText("" + question.getNumOfReplies());
+        replyButton.setOnClickListener(new View.OnClickListener() {
+           @Override
+           public void onClick(View view) {
+               MainActivity m = (MainActivity) view.getContext();
+               m.enterReply(question.getKey());
+               //m.updateEcho((String) view.getTag());
+               //notifyDataSetChanged();
+           }
+        });
 
         // check if we already clicked
-        boolean clickable = !dbUtil.contains(question.getKey());
+        //boolean clickable = !dbUtil.contains(question.getKey());
 
-        echoButton.setClickable(clickable);
-        echoButton.setEnabled(clickable);
+        //echoButton.setClickable(clickable);
+        //echoButton.setEnabled(clickable);
         //view.setClickable(clickable);
-
-
-
-
 
         // http://stackoverflow.com/questions/8743120/how-to-grey-out-a-button
         // grey out our button
+
+        /*
         if (clickable) {
             echoButton.getBackground().setColorFilter(null);
         } else {
             echoButton.getBackground().setColorFilter(Color.RED, PorterDuff.Mode.MULTIPLY);
-        }
+        }*/
 
 
         view.setTag(question.getKey());  // store key in the view

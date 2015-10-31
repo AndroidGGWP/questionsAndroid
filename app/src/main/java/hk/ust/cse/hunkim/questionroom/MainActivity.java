@@ -4,7 +4,9 @@ package hk.ust.cse.hunkim.questionroom;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.database.DataSetObserver;
+import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -31,7 +33,7 @@ import hk.ust.cse.hunkim.questionroom.question.Question;
 public class MainActivity extends ListActivity {
 
     // TODO: change this to your own Firebase URL
-    private static final String FIREBASE_URL = "https://ggwptest.firebaseio.com/";
+    private static final String FIREBASE_URL = "https://fiery-heat-97.firebaseio.com/";
 
     private String roomName;
     private Firebase mFirebaseRef;
@@ -138,7 +140,6 @@ public class MainActivity extends ListActivity {
     public void onResume() {
         super.onResume();
 
-
         ListView listView = getListView();
         QuestionListAdapter temChatListAdapter = new QuestionListAdapter(
                 mFirebaseRef.orderByChild("echo").limitToFirst(200),
@@ -146,7 +147,6 @@ public class MainActivity extends ListActivity {
         listView.setAdapter(temChatListAdapter);
         temChatListAdapter.notifyDataSetChanged();
     }
-
 
     @Override
     public void onStop() {
@@ -178,10 +178,58 @@ public class MainActivity extends ListActivity {
                 new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                            Long echoValue = (Long) dataSnapshot.getValue();
-                            Log.e("Echo update:", "" + echoValue);
+                        Long echoValue = (Long) dataSnapshot.getValue();
+                        Log.e("Echo update:", "" + echoValue);
 
-                            echoRef.setValue(echoValue + 1);
+                        echoRef.setValue(echoValue + 1);
+
+                    }
+
+                    @Override
+                    public void onCancelled(FirebaseError firebaseError) {
+
+                    }
+                }
+        );
+
+        final Firebase orderRef = mFirebaseRef.child(key).child("order");
+        orderRef.addListenerForSingleValueEvent(
+                new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        Long orderValue = (Long) dataSnapshot.getValue();
+                        Log.e("Order update:", "" + orderValue);
+
+                        orderRef.setValue(orderValue + 1);
+                    }
+
+                    @Override
+                    public void onCancelled(FirebaseError firebaseError) {
+
+                    }
+                }
+        );
+
+        // Update SQLite DB
+        dbutil.put(key);
+
+    }
+
+    public void updateDislikes(String key) {
+        if (dbutil.contains(key)) {
+            Log.e("Dupkey", "Key is already in the DB!");
+            return;
+        }
+
+        final Firebase dislikesRef = mFirebaseRef.child(key).child("dislikes");
+        dislikesRef.addListenerForSingleValueEvent(
+                new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        Long dislikesValue = (Long) dataSnapshot.getValue();
+                        Log.e("Echo update:", "" + dislikesValue);
+
+                        dislikesRef.setValue(dislikesValue + 1);
 
                     }
 
@@ -231,24 +279,17 @@ public class MainActivity extends ListActivity {
         listView.setAdapter(temChatListAdapter);
     }
 
-
-
     public void enterReply(String key) {
         Intent intent = new Intent(this, ReplyActivity.class);
         intent.putExtra("questionRef", FIREBASE_URL+roomName+"/questions/"+key);
         startActivity(intent);
     }
 
-
-
-
-
     public void Search(View view) {
         Intent intent = new Intent(this, SearchActivity.class);
         intent.putExtra("Room Name", roomName);
         startActivityForResult(intent, 1);
     }
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -259,6 +300,34 @@ public class MainActivity extends ListActivity {
             StartTime = newStartTime;
             EndTime = newEndTime;
             Content = newContent;
+        }
+    }
+
+    @Override
+    public void startActivity(Intent intent) {
+        if (TextUtils.equals(intent.getAction(), Intent.ACTION_VIEW)) {
+            //Intent i = new Intent(this,MainActivity.class);
+            Intent i = new Intent(this,SearchActivity.class);
+            Uri uri = intent.getData();
+            //strip off hashtag from the URI
+            String tag=uri.toString();
+           /* System.out.println(tag.substring(3));
+            i.putExtra("StartTime", "The Start");
+            i.putExtra("EndTime", "Now");
+            i.putExtra("Content", "#test");
+            i.putExtra("Room Name", roomName);
+
+
+            //MainActivity.this.setResult(RESULT_OK, i);
+            startActivity(i);*/
+            System.out.println(tag.substring(3).length());
+            i.putExtra("hash",tag.substring(3)+ " ");
+            intent.putExtra("Room Name", roomName);
+            startActivityForResult(i, 1);
+            //startActivity(i);
+        }
+        else {
+            super.startActivity(intent);
         }
     }
 };

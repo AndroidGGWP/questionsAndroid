@@ -33,7 +33,7 @@
             android:gravity="fill_horizontal">
             <Button
                 android:id="@+id/echoInReply"
-                android:drawableLeft="@drawable/like24"
+                android:drawableLeft="@drawable/like"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dp"

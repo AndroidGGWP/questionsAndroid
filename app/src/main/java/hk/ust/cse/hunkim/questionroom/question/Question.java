@@ -25,6 +25,7 @@ public class Question implements Comparable<Question> {
     private long timestamp;
     private String tags;
     private int echo;
+    private int dislikes;
     private int order;
     private boolean newQuestion;
     private int numOfReplies;
@@ -54,6 +55,7 @@ public class Question implements Comparable<Question> {
     public Question(String message) {
         this.wholeMsg = message;
         this.echo = 0;
+        this.dislikes = 0;
         this.head = getFirstSentence(message).trim();
         this.desc = "";
         if (this.head.length() < message.length()) {
@@ -111,6 +113,8 @@ public class Question implements Comparable<Question> {
     public int getEcho() {
         return echo;
     }
+
+    public int getDislikes() { return dislikes; }
 
     public String getWholeMsg() {
         return wholeMsg;
@@ -172,19 +176,18 @@ public class Question implements Comparable<Question> {
         this.updateNewQuestion();
 
         if (this.newQuestion != other.newQuestion) {
-            return this.newQuestion ? 1 : -1; // this is the winner
+            return this.newQuestion ? -1 : 1; // this is the winner
         }
 
 
-        if (this.echo == other.echo) {
+        if (this.order == other.order) {
             if (other.timestamp == this.timestamp) {
                 return 0;
             }
-            return other.timestamp > this.timestamp ? -1 : 1;
+            return other.timestamp > this.timestamp ? 1 : -1;
         }
-        return this.echo - other.echo;
+        return -(this.order - other.order);
     }
-
 
     @Override
     public boolean equals(Object o) {

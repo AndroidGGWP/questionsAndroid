@@ -40,8 +40,6 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
     private ChildEventListener mListener;
 
 
-
-
     /**
      * @param mRef        The Firebase location to watch for data changes. Can also be a slice of a location, using some
      *                    combination of <code>limit()</code>, <code>startAt()</code>, and <code>endAt()</code>,
@@ -64,6 +62,7 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
             public void onChildAdded(DataSnapshot dataSnapshot, String previousChildName) {
 
                 T model = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                Log.d("ADDED", dataSnapshot.getKey());
                 if (search_valid(model)) {
                     String modelName = dataSnapshot.getKey();
                     mModelKeys.put(modelName, model);
@@ -98,7 +97,9 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
                 // One of the mModels changed. Replace it in our list and name mapping
 
                 T newModel = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                Log.d("CHANGED", dataSnapshot.getKey());
                 if (search_valid(newModel)) {
+
                     String modelName = dataSnapshot.getKey();
                     T oldModel = mModelKeys.get(modelName);
                     // TOFIX: Any easy way to ser key?
@@ -106,7 +107,7 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
 
                     int index = mModels.indexOf(oldModel);
                     mModels.set(index, newModel);
-
+Log.d("CHANGED", "index = " + ((Integer)index).toString());
 
                     // update map
                     mModelKeys.put(modelName, newModel);
@@ -119,6 +120,7 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
             public void onChildRemoved(DataSnapshot dataSnapshot) {
 
                 T newModel = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                Log.d("REMOVED", dataSnapshot.getKey());
                 if (search_valid(newModel)) {
 
                     // A model was removed from the list. Remove it from our list and the name mapping
@@ -136,6 +138,7 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
                 // A model changed position in the list. Update our list accordingly
 
                 T newModel = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                Log.d("MOVED", dataSnapshot.getKey());
                 if (search_valid(newModel)) {
 
                     String modelName = dataSnapshot.getKey();
@@ -147,7 +150,9 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
                     mModels.remove(index);
                     if (previousChildName == null) {
                         mModels.add(0, newModel);
+                        Log.d("MOVED", "Previous child is null");
                     } else {
+                        Log.d("MOVED", "Previous child is " + previousChildName);
                         T previousModel = mModelKeys.get(previousChildName);
                         int previousIndex = mModels.indexOf(previousModel);
                         int nextIndex = previousIndex + 1;

@@ -23,6 +23,25 @@ public class SearchActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (getIntent().getExtras().getString("hash") != null)
+        {
+            System.out.println(getIntent().getExtras().getString("hash") );
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+            String Time1 = dateFormat.format(new Date(System.currentTimeMillis()));
+            Toast.makeText(SearchActivity.this,
+                    "OnClickListener : " +
+                            "\nStart Time : " + "The Start" +
+                            "\nEnd Time : " + "Now" +
+                            "\nSearch Content : " + getIntent().getExtras().getString("hash") +
+                            "\nCurrent Time is :" + Time1,
+                    Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent();
+            intent.putExtra("StartTime", "All");
+            intent.putExtra("EndTime", "All");
+            intent.putExtra("Content",getIntent().getExtras().getString("hash") );
+            SearchActivity.this.setResult(RESULT_OK, intent);
+            SearchActivity.this.finish();
+        }
         setContentView(R.layout.activity_search);
         doInitialization();
     }
