@@ -111,14 +111,6 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
         }
     }
 
-    /**
-     * Bind an instance of the <code>Chat</code> class to our view. This method is called by <code>FirebaseListAdapter</code>
-     * when there is a data change, and we are given an instance of a View that corresponds to the layout that we passed
-     * to the constructor, as well as a single <code>Chat</code> instance that represents the current data to bind.
-     *
-     * @param view     A view instance corresponding to the layout we passed to the constructor.
-     * @param question An instance representing the current state of a chat message
-     */
     @Override
     protected void populateView(View view, Question question1) {
         final Question question=question1;
@@ -126,10 +118,22 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
         //int echo = question.getEcho();
         //echoButton.setText("" + echo);
         //echoButton.setTextColor(Color.BLUE);
-        //((TextView) view.findViewById(R.id.echonum)).setText(question.getEcho());
 
-        ImageButton echoButton = (ImageButton) view.findViewById(R.id.echo);
-        ((TextView) view.findViewById(R.id.echonum)).setText(("" + question.getEcho()));
+        // Display question
+        String msgString = "";
+        question.updateNewQuestion();
+        if (question.isNewQuestion()) {
+            msgString += "<font color=red>NEW </font>";
+        }
+        msgString += "<B>" + question.getHead() + "</B>" + question.getDesc();
+        ((TextView) view.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
+
+        // Question posted time
+        TimeDisplay timeDisplay = new TimeDisplay(question.getTimestamp());
+        ((TextView) view.findViewById(R.id.questionTimestamp)).setText(timeDisplay.getOutputTime());
+
+        // Like button&number
+        ImageButton echoButton = (ImageButton) view.findViewById(R.id.questionEchoButton);
         echoButton.setTag(question.getKey()); // Set tag for button
         echoButton.setOnClickListener(
                 new View.OnClickListener() {
@@ -140,13 +144,10 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
                     }
                 }
         );
+        ((TextView) view.findViewById(R.id.questionEchonum)).setText(("" + question.getEcho()));
 
-        //int dislikes = question.getDislikes();
-        //echoButton.setText("" + echo);
-        //echoButton.setTextColor(Color.BLUE);
-        //((TextView) view.findViewById(R.id.dislikenum)).setText(question.getDislikes());
-        ImageButton dislikeButton = (ImageButton) view.findViewById(R.id.dislike);
-        ((TextView) view.findViewById(R.id.dislikenum)).setText(("" + question.getDislikes()));
+        //Dislike button&number
+        ImageButton dislikeButton = (ImageButton) view.findViewById(R.id.questionDislikeButton);
         dislikeButton.setTag(question.getKey()); // Set tag for button
         dislikeButton.setOnClickListener(
                 new View.OnClickListener() {
@@ -157,16 +158,22 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
                     }
                 }
         );
+        ((TextView) view.findViewById(R.id.questionDislikenum)).setText(("" + question.getDislikes()));
 
-        String msgString = "";
-        question.updateNewQuestion();
-        if (question.isNewQuestion()) {
-            msgString += "<font color=red>NEW </font>";
-        }
+        // Reply button&number
+        ImageButton replyButton = (ImageButton) view.findViewById(R.id.questionReplyButton);
+        replyButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                MainActivity m = (MainActivity) view.getContext();
+                m.enterReply(question.getKey());
+                //m.updateEcho((String) view.getTag());
+                //notifyDataSetChanged();
+            }
+        });
+        ((TextView) view.findViewById(R.id.questionReplynum)).setText("" + question.getNumOfReplies());
 
-        msgString += "<B>" + question.getHead() + "</B>" + question.getDesc();
 
-        ((TextView) view.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
 
         TextView hashView = (TextView) view.findViewById(R.id.head_desc);
         SpannableString ss = new SpannableString(hashView.getText().toString());
@@ -176,41 +183,17 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
         String newActivityURL = "tag";
         Linkify.addLinks(hashView, tagPattern, newActivityURL);
 
-
-        TimeDisplay timeDisplay = new TimeDisplay(question.getTimestamp());
-        ((TextView) view.findViewById(R.id.timestamp)).setText(timeDisplay.getOutputTime());
-
-
-        ImageButton replyButton = (ImageButton) view.findViewById(R.id.reply);
-        ((TextView) view.findViewById(R.id.replynum)).setText("" + question.getNumOfReplies());
-        replyButton.setOnClickListener(new View.OnClickListener() {
-           @Override
-           public void onClick(View view) {
-               MainActivity m = (MainActivity) view.getContext();
-               m.enterReply(question.getKey());
-               //m.updateEcho((String) view.getTag());
-               //notifyDataSetChanged();
-           }
-        });
-
         // check if we already clicked
         //boolean clickable = !dbUtil.contains(question.getKey());
-
         //echoButton.setClickable(clickable);
         //echoButton.setEnabled(clickable);
         //view.setClickable(clickable);
-
-        // http://stackoverflow.com/questions/8743120/how-to-grey-out-a-button
-        // grey out our button
-
         /*
         if (clickable) {
             echoButton.getBackground().setColorFilter(null);
         } else {
             echoButton.getBackground().setColorFilter(Color.RED, PorterDuff.Mode.MULTIPLY);
         }*/
-
-
         view.setTag(question.getKey());  // store key in the view
     }
 

@@ -2,11 +2,13 @@ package hk.ust.cse.hunkim.questionroom;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -36,17 +38,15 @@ public class ReplyActivity extends Activity {
         String questionURLString = extras.getString("questionRef");
         final Firebase mQuestionRef = new Firebase(questionURLString);
 
-
-        Log.d("debug", questionURLString);
-
-
         //Get the question in this reply room
         final Firebase questionMessageRef = mQuestionRef.child("wholeMsg");
         final TextView question = (TextView) findViewById(R.id.question);
 
-        //time for the question
-        final TextView questionTime = (TextView) findViewById(R.id.questionTime);
+        //time, echo, dislikes
 
+        final TextView questionTime = (TextView) findViewById(R.id.replyQuestionTimestamp);
+        //final TextView questionEchonum = (TextView) findViewById(R.id.replyQuestionEchonum);
+        //final TextView questionDislikes = (TextView) findViewById(R.id.replyQuestionDislikenum);
 
         mQuestionRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -56,6 +56,8 @@ public class ReplyActivity extends Activity {
                 long questionTimestamp = (long) dataSnapshot.child("timestamp").getValue();
                 TimeDisplay questionTimeDisplay = new TimeDisplay(questionTimestamp);
                 questionTime.setText(questionTimeDisplay.getOutputTime());
+                //questionEchonum.setText(""+((long) dataSnapshot.child("echo").getValue()));
+                //questionDislikes.setText(""+((long) dataSnapshot.child("dislikes").getValue()));
             }
 
             @Override
@@ -151,4 +153,5 @@ public class ReplyActivity extends Activity {
                 }
         );
     }
+
 }

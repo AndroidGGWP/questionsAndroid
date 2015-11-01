@@ -105,7 +105,7 @@ public class MainActivity extends ListActivity {
         final ListView listView = getListView();
         // Tell our list adapter that we only want 200 messages at a time
         mChatListAdapter = new QuestionListAdapter(
-                mFirebaseRef.orderByChild("echo").limitToFirst(200),
+                mFirebaseRef.orderByChild("order").limitToFirst(200),
                 this, R.layout.question, roomName);
         listView.setAdapter(mChatListAdapter);
 
@@ -263,6 +263,11 @@ public class MainActivity extends ListActivity {
 
     }
 
+    public void enterReply(String key) {
+        Intent intent = new Intent(this, ReplyActivity.class);
+        intent.putExtra("questionRef", FIREBASE_URL+roomName+"/questions/"+key);
+        startActivity(intent);
+    }
 
     public void Close(View view) {
         finish();
@@ -279,11 +284,7 @@ public class MainActivity extends ListActivity {
         listView.setAdapter(temChatListAdapter);
     }
 
-    public void enterReply(String key) {
-        Intent intent = new Intent(this, ReplyActivity.class);
-        intent.putExtra("questionRef", FIREBASE_URL+roomName+"/questions/"+key);
-        startActivity(intent);
-    }
+
 
     public void Search(View view) {
         Intent intent = new Intent(this, SearchActivity.class);
@@ -302,7 +303,6 @@ public class MainActivity extends ListActivity {
             Content = newContent;
         }
     }
-
     @Override
     public void startActivity(Intent intent) {
         if (TextUtils.equals(intent.getAction(), Intent.ACTION_VIEW)) {

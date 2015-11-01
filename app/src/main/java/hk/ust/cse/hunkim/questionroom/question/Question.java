@@ -176,17 +176,26 @@ public class Question implements Comparable<Question> {
         this.updateNewQuestion();
 
         if (this.newQuestion != other.newQuestion) {
-            return this.newQuestion ? -1 : 1; // this is the winner
+            return this.newQuestion ? 1 : -1; // this is the winner
         }
-
-
-        if (this.order == other.order) {
+        if (this.echo != other.echo){
+            return this.echo > other.echo? 1 : -1;
+        }
+        if (this.dislikes != other.dislikes){
+            return this.dislikes < other.dislikes? 1 : -1;
+        }
+        if (this.timestamp != other.timestamp){
+            return this.timestamp > other.timestamp? 1 : -1;
+        }
+        return 0;
+        /*
+        if (this.echo == other.echo) {
             if (other.timestamp == this.timestamp) {
                 return 0;
             }
-            return other.timestamp > this.timestamp ? 1 : -1;
+            return other.timestamp > this.timestamp ? -1 : 1;
         }
-        return -(this.order - other.order);
+        return (this.echo - other.echo);*/
     }
 
     @Override

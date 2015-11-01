@@ -6,14 +6,13 @@
     android:orientation="vertical">
 
     <LinearLayout
-        android:id="@+id/title"
+        android:id="@+id/questionTop"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/head_desc"
-            android:text="question"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="#000000"
@@ -23,108 +22,60 @@
     </LinearLayout>
 
     <RelativeLayout
-        android:id="@+id/questionMiddle"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp">
-        <TextView
-            android:id="@+id/hashtag1"
-            android:layout_alignParentLeft="true"
-            android:text="tag1"
-            android:layout_width="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_height="wrap_content"
-            />
-        <TextView
-            android:id="@+id/hashtag2"
-            android:layout_toRightOf="@+id/hashtag1"
-            android:text="tag2"
-            android:layout_width="wrap_content"
-            android:layout_marginRight="10dp"
-            android:layout_height="wrap_content"
-            />
-        <TextView
-            android:id="@+id/hashtag3"
-            android:layout_toRightOf="@+id/hashtag2"
-            android:text="tag4"
-            android:layout_width="wrap_content"
-            android:layout_marginRight="10dp"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:id="@+id/hashtag4"
-            android:layout_toRightOf="@+id/hashtag3"
-            android:text="tag4"
-            android:layout_width="wrap_content"
-            android:layout_marginRight="10dp"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:id="@+id/hashtag5"
-            android:layout_toRightOf="@+id/hashtag4"
-            android:text="tag5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </RelativeLayout>
-
-    <RelativeLayout
         android:id="@+id/questionBottom"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="5dp">
         <TextView
             android:layout_centerVertical="true"
-            android:id="@+id/timestamp"
-            android:text="5 seconds ago"
+            android:id="@+id/questionTimestamp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"/>
 
         <ImageButton
-            android:id="@+id/echo"
+            android:id="@+id/questionEchoButton"
             android:src="@drawable/like"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@null"
             android:layout_centerVertical="true"
-            android:layout_toLeftOf="@+id/echonum"
+            android:layout_toLeftOf="@+id/questionEchonum"
             android:layout_marginLeft="5dp"/>
         <TextView
-            android:id="@+id/echonum"
-            android:text="5"
+            android:id="@+id/questionEchonum"
             android:layout_centerVertical="true"
             android:layout_width="wrap_content"
-            android:layout_toLeftOf="@+id/dislike"
+            android:layout_toLeftOf="@+id/questionDislikeButton"
             android:layout_marginRight="20dp"
             android:layout_height="wrap_content" />
 
         <ImageButton
-            android:id="@+id/dislike"
+            android:id="@+id/questionDislikeButton"
             android:src="@drawable/dislike"
             android:background="@null"
             android:layout_centerVertical="true"
             android:layout_width="wrap_content"
-            android:layout_toLeftOf="@+id/dislikenum"
+            android:layout_toLeftOf="@+id/questionDislikenum"
             android:layout_height="wrap_content" />
         <TextView
-            android:id="@+id/dislikenum"
-            android:text="7"
+            android:id="@+id/questionDislikenum"
             android:layout_centerVertical="true"
             android:layout_width="wrap_content"
-            android:layout_toLeftOf="@+id/reply"
+            android:layout_toLeftOf="@+id/questionReplyButton"
             android:layout_marginRight="20dp"
             android:layout_height="wrap_content" />
 
         <ImageButton
-            android:id="@+id/reply"
+            android:id="@+id/questionReplyButton"
             android:src="@drawable/reply"
             android:background="@null"
             android:layout_centerVertical="true"
-            android:layout_toLeftOf="@+id/replynum"
+            android:layout_toLeftOf="@+id/questionReplynum"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
         <TextView
-            android:id="@+id/replynum"
-            android:text="3"
+            android:id="@+id/questionReplynum"
             android:layout_centerVertical="true"
             android:layout_alignParentRight="true"
             android:layout_marginRight="10dp"
