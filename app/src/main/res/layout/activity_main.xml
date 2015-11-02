@@ -6,6 +6,7 @@
     tools:context=".MainActivity">
 
 
+
     <Button
         android:id="@+id/close"
         android:layout_width="wrap_content"
@@ -15,6 +16,25 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
         />
+
+    <Button
+        android:layout_marginLeft="100dp"
+        android:id="@+id/reset_search"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="Reset_Search"
+        android:text="Reset"
+        />
+
+
+    <Button
+        android:id="@+id/filter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text='Filter'
+        android:onClick="Search"
+        />
+
 
     <ListView
         android:id="@android:id/list"

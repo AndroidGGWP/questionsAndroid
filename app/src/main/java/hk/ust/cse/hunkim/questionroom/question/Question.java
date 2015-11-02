@@ -1,6 +1,10 @@
 package hk.ust.cse.hunkim.questionroom.question;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
+import hk.ust.cse.hunkim.questionroom.FirebaseListAdapter;
 
 /**
  * Created by hunkim on 7/16/15.
@@ -21,8 +25,11 @@ public class Question implements Comparable<Question> {
     private long timestamp;
     private String tags;
     private int echo;
+    private int dislikes;
     private int order;
     private boolean newQuestion;
+    private int numOfReplies;
+    private List<Reply> replies;
 
     public String getDateString() {
         return dateString;
@@ -48,6 +55,7 @@ public class Question implements Comparable<Question> {
     public Question(String message) {
         this.wholeMsg = message;
         this.echo = 0;
+        this.dislikes = 0;
         this.head = getFirstSentence(message).trim();
         this.desc = "";
         if (this.head.length() < message.length()) {
@@ -58,6 +66,9 @@ public class Question implements Comparable<Question> {
         this.headLastChar = head.substring(head.length() - 1);
 
         this.timestamp = new Date().getTime();
+        this.numOfReplies = 0;
+        this.replies = new ArrayList<Reply>();
+        this.replies.add(new Reply(""));
     }
 
     /**
@@ -103,6 +114,8 @@ public class Question implements Comparable<Question> {
         return echo;
     }
 
+    public int getDislikes() { return dislikes; }
+
     public String getWholeMsg() {
         return wholeMsg;
     }
@@ -135,6 +148,10 @@ public class Question implements Comparable<Question> {
         return newQuestion;
     }
 
+    public int getNumOfReplies() { return numOfReplies; }
+
+    public List<Reply> getReplies() { return replies; }
+
     public void updateNewQuestion() {
         newQuestion = this.timestamp > new Date().getTime() - 180000;
     }
@@ -161,17 +178,25 @@ public class Question implements Comparable<Question> {
         if (this.newQuestion != other.newQuestion) {
             return this.newQuestion ? 1 : -1; // this is the winner
         }
-
-
+        if (this.echo != other.echo){
+            return this.echo > other.echo? 1 : -1;
+        }
+        if (this.dislikes != other.dislikes){
+            return this.dislikes < other.dislikes? 1 : -1;
+        }
+        if (this.timestamp != other.timestamp){
+            return this.timestamp > other.timestamp? 1 : -1;
+        }
+        return 0;
+        /*
         if (this.echo == other.echo) {
             if (other.timestamp == this.timestamp) {
                 return 0;
             }
             return other.timestamp > this.timestamp ? -1 : 1;
         }
-        return this.echo - other.echo;
+        return (this.echo - other.echo);*/
     }
-
 
     @Override
     public boolean equals(Object o) {

@@ -7,6 +7,9 @@ import android.test.suitebuilder.annotation.MediumTest;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Button;
+import android.util.Log;
+
 
 /**
  * Created by hunkim on 7/20/15.
@@ -15,7 +18,7 @@ public class MainActivityTest extends ActivityUnitTestCase<MainActivity> {
 
     private Intent mStartIntent;
     private ImageButton mButton;
-
+    private Button reset_search;
     public MainActivityTest() {
         super(MainActivity.class);
     }
@@ -82,7 +85,44 @@ public class MainActivityTest extends ActivityUnitTestCase<MainActivity> {
         text.setText("This is test!");
         mButton.performClick();
 
+        text.setText("");
+        mButton.performClick();
         // TODO: How to confirm a new text is posted?
         // assertEquals("Child count: ", lView.getChildCount(), 10);
+    }
+
+
+    @MediumTest
+    public void testResetSearch(){
+        Activity my_activity=startActivity(mStartIntent, null, null);
+        reset_search = (Button) my_activity.findViewById(R.id.reset_search);
+        Log.e("tag1", "111");
+        if (reset_search==null){
+            Log.e("tag_null","ggg");
+        }
+        //reset_search.performClick();
+        Log.e("tag2", "222");
+        assertEquals(getActivity().StartTime, "");
+        assertEquals(getActivity().EndTime, "");
+        assertEquals(getActivity().Content, "");
+    }
+
+    @MediumTest
+    public void testUpdateEchoDislike(){
+        startActivity(mStartIntent,null,null);
+        getActivity().updateEcho("lzxsg");
+        getActivity().updateEcho("lzxsg");
+        getActivity().updateDislikes("lzxjsg");
+        getActivity().updateDislikes("lzxjsg");
+    }
+
+    @MediumTest
+    public void testOnActivityResult(){
+        startActivity(mStartIntent,null,null);
+        Intent intent= new Intent();
+        intent.putExtra("StartTime", "");
+        intent.putExtra("EndTime", "");
+        intent.putExtra("Content", "");
+        getActivity().onActivityResult(1,1,intent);
     }
 }

@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 /**
  * @param <T> The class type to use as a model for the data contained in the children of the given Firebase location
  * @author greg
@@ -32,11 +33,14 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
 
     private Query mRef;
     private Class<T> mModelClass;
-    private int mLayout;
-    private LayoutInflater mInflater;
-    private List<T> mModels;
-    private Map<String, T> mModelKeys;
+    protected int mLayout;
+    protected LayoutInflater mInflater;
+    protected List<T> mModels;
+    protected Map<String, T> mModelKeys;
     private ChildEventListener mListener;
+
+
+
 
     /**
      * @param mRef        The Firebase location to watch for data changes. Can also be a slice of a location, using some
@@ -60,92 +64,101 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
             public void onChildAdded(DataSnapshot dataSnapshot, String previousChildName) {
 
                 T model = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                if (search_valid(model)) {
+                    String modelName = dataSnapshot.getKey();
+                    mModelKeys.put(modelName, model);
 
-                String modelName = dataSnapshot.getKey();
-                mModelKeys.put(modelName, model);
+                    // TOFIX: Any easy way to ser key?
+                    setKey(modelName, model);
 
-                // TOFIX: Any easy way to ser key?
-                setKey(modelName, model);
+                    // bug seeded
+                    // mModels.add(-1, model);
 
-                // bug seeded
-                // mModels.add(-1, model);
-
-                // Insert into the correct location, based on previousChildName
-                if (previousChildName == null) {
-                    mModels.add(0, model);
-                } else {
-                    T previousModel = mModelKeys.get(previousChildName);
-                    int previousIndex = mModels.indexOf(previousModel);
-                    int nextIndex = previousIndex + 1;
-                    if (nextIndex == mModels.size()) {
-                        mModels.add(model);
+                    // Insert into the correct location, based on previousChildName
+                    if (previousChildName == null) {
+                        mModels.add(0, model);
                     } else {
-                        mModels.add(nextIndex, model);
+                        T previousModel = mModelKeys.get(previousChildName);
+                        int previousIndex = mModels.indexOf(previousModel);
+                        int nextIndex = previousIndex + 1;
+                        if (nextIndex == mModels.size()) {
+                            mModels.add(model);
+                        } else {
+                            mModels.add(nextIndex, model);
+                        }
                     }
-                }
 
-                notifyDataSetChanged();
+                    notifyDataSetChanged();
+                }
             }
 
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
                 // One of the mModels changed. Replace it in our list and name mapping
-                String modelName = dataSnapshot.getKey();
-                T oldModel = mModelKeys.get(modelName);
+
                 T newModel = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                if (search_valid(newModel)) {
+                    String modelName = dataSnapshot.getKey();
+                    T oldModel = mModelKeys.get(modelName);
+                    // TOFIX: Any easy way to ser key?
+                    setKey(modelName, newModel);
 
-                // TOFIX: Any easy way to ser key?
-                setKey(modelName, newModel);
+                    int index = mModels.indexOf(oldModel);
+                    mModels.set(index, newModel);
 
 
-                int index = mModels.indexOf(oldModel);
-                mModels.set(index, newModel);
+                    // update map
+                    mModelKeys.put(modelName, newModel);
 
-
-                // update map
-                mModelKeys.put(modelName, newModel);
-
-                notifyDataSetChanged();
+                    notifyDataSetChanged();
+                }
             }
 
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
 
-                // A model was removed from the list. Remove it from our list and the name mapping
-                String modelName = dataSnapshot.getKey();
-                T oldModel = mModelKeys.get(modelName);
-                mModels.remove(oldModel);
-                mModelKeys.remove(modelName);
-                notifyDataSetChanged();
+                T newModel = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                if (search_valid(newModel)) {
+
+                    // A model was removed from the list. Remove it from our list and the name mapping
+                    String modelName = dataSnapshot.getKey();
+                    T oldModel = mModelKeys.get(modelName);
+                    mModels.remove(oldModel);
+                    mModelKeys.remove(modelName);
+                    notifyDataSetChanged();
+                }
             }
 
             @Override
             public void onChildMoved(DataSnapshot dataSnapshot, String previousChildName) {
 
                 // A model changed position in the list. Update our list accordingly
-                String modelName = dataSnapshot.getKey();
-                T oldModel = mModelKeys.get(modelName);
+
                 T newModel = dataSnapshot.getValue(FirebaseListAdapter.this.mModelClass);
+                if (search_valid(newModel)) {
 
-                // TOFIX: Any easy way to ser key?
-                setKey(modelName, newModel);
+                    String modelName = dataSnapshot.getKey();
+                    T oldModel = mModelKeys.get(modelName);
+                    // TOFIX: Any easy way to ser key?
+                    setKey(modelName, newModel);
 
-                int index = mModels.indexOf(oldModel);
-                mModels.remove(index);
-                if (previousChildName == null) {
-                    mModels.add(0, newModel);
-                } else {
-                    T previousModel = mModelKeys.get(previousChildName);
-                    int previousIndex = mModels.indexOf(previousModel);
-                    int nextIndex = previousIndex + 1;
-                    if (nextIndex == mModels.size()) {
-                        mModels.add(newModel);
+                    int index = mModels.indexOf(oldModel);
+                    mModels.remove(index);
+                    if (previousChildName == null) {
+                        mModels.add(0, newModel);
                     } else {
-                        mModels.add(nextIndex, newModel);
+                        T previousModel = mModelKeys.get(previousChildName);
+                        int previousIndex = mModels.indexOf(previousModel);
+                        int nextIndex = previousIndex + 1;
+                        if (nextIndex == mModels.size()) {
+                            mModels.add(newModel);
+                        } else {
+                            mModels.add(nextIndex, newModel);
+                        }
                     }
+                    notifyDataSetChanged();
                 }
-                notifyDataSetChanged();
             }
 
             @Override
@@ -179,8 +192,11 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
         return i;
     }
 
+
+
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
+
         if (view == null) {
             view = mInflater.inflate(mLayout, viewGroup, false);
         }
@@ -196,8 +212,13 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
 
         // Call out to subclass to marshall this model into the provided view
         populateView(view, model);
+
         return view;
     }
+
+
+
+
 
     /**
      * Each time the data at the given Firebase location changes, this method will be called for each item that needs
@@ -214,4 +235,5 @@ public abstract class FirebaseListAdapter<T> extends BaseAdapter {
 
     protected abstract void setKey(String key, T model);
 
+    protected abstract boolean search_valid(T model);
 }
