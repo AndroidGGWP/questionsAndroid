@@ -18,11 +18,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-
-import com.firebase.client.ValueEventListener;
 
 
 import java.util.HashMap;
@@ -36,15 +31,13 @@ import hk.ust.cse.hunkim.questionroom.question.Question;
 public class MainActivity extends ListActivity {
 
     private String roomName;
-    private QuestionListAdapter mChatListAdapter;
+    private QuestionAdapter mQuestionAdapter;
+    private RESTfulAPI mAPI = RESTfulAPI.getInstance();
     private String StartTime;
     private String EndTime;
     private String Content;
 
     private DBUtil dbutil;
-
-    private RESTfulAPI api = RESTfulAPI.getInstance();
-    private List<Question> mQuestionList;
 
     public DBUtil getDbutil() {
         return dbutil;
@@ -69,12 +62,10 @@ public class MainActivity extends ListActivity {
 
         setTitle("Room name: " + roomName);
 
-        // Setup our Firebase mFirebaseRef
-       // mFirebaseRef = new Firebase(FIREBASE_URL).child(roomName).child("questions");
         Map<String, String> query = new HashMap<>();
         query.put("roomName", roomName);
-        api.setQuestionList(query);
-        mQuestionList = api.questionList;
+        mAPI.setQuestionList(query);
+        List<Question> questions = mAPI.questionList;
 
         // Setup our input methods. Enter key on the keyboard or pushing the send button
         EditText inputText = (EditText) findViewById(R.id.messageInput);
@@ -110,17 +101,9 @@ public class MainActivity extends ListActivity {
         Map<String, String> query = new HashMap<>();
         query.put("sortBy", "order");
         query.put("limit", "200");
-        mChatListAdapter = new QuestionListAdapter(query,
-                this, R.layout.question, roomName);
-        listView.setAdapter(mChatListAdapter);
-
-        mChatListAdapter.registerDataSetObserver(new DataSetObserver() {
-            @Override
-            public void onChanged() {
-                super.onChanged();
-                listView.setSelection(mChatListAdapter.getCount() - 1);
-            }
-        });
+        mAPI.setQuestionList(query);
+        mQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.questionList);
+        listView.setAdapter(mQuestionAdapter);
     }
 
     @Override
@@ -131,10 +114,10 @@ public class MainActivity extends ListActivity {
         Map<String, String> query = new HashMap<>();
         query.put("sortBy", "echo");
         query.put("limit", "200");
-         QuestionListAdapter temChatListAdapter = new QuestionListAdapter(query,
-                this, R.layout.question, roomName, StartTime, EndTime, Content);
-        listView.setAdapter(temChatListAdapter);
-        temChatListAdapter.notifyDataSetChanged();
+        mAPI.setQuestionList(query);
+        QuestionAdapter temQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.questionList);
+        listView.setAdapter(temQuestionAdapter);
+        temQuestionAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -149,7 +132,7 @@ public class MainActivity extends ListActivity {
             // Create our 'model', a Chat object
             Question question = new Question(input);
             // Create a new, auto-generated child of that chat location, and save our chat data there
-            api.saveQuesion(question);
+            mAPI.saveQuesion(question);
             inputText.setText("");
         }
     }
@@ -199,8 +182,9 @@ public class MainActivity extends ListActivity {
         Map<String, String> query = new HashMap<>();
         query.put("sortBy", "echo");
         query.put("limit", "200");
-        QuestionListAdapter temChatListAdapter = new QuestionListAdapter(query, this, R.layout.question, roomName);
-        listView.setAdapter(temChatListAdapter);
+        mAPI.setQuestionList(query);
+        QuestionAdapter temQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.questionList);
+        listView.setAdapter(temQuestionAdapter);
     }
 
 

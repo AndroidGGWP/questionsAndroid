@@ -1,6 +1,7 @@
 package hk.ust.cse.hunkim.questionroom.question;
 
 import android.databinding.BaseObservable;
+import android.databinding.Bindable;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -8,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import hk.ust.cse.hunkim.questionroom.FirebaseListAdapter;
+import hk.ust.cse.hunkim.questionroom.BR;
 
 /**
  * Created by hunkim on 7/16/15.
@@ -119,10 +120,17 @@ public class Question extends BaseObservable {
         return desc;
     }
 
+    @Bindable
+    public String getMsgString() {
+        return "<font color=red>NEW </font>" + "<B>" + head + "<B>" + desc;
+    }
+
+    @Bindable
     public int getEcho() {
         return echo;
     }
 
+    @Bindable
     public int getDislikes() { return dislikes; }
 
     public String getWholeMsg() {
@@ -157,6 +165,7 @@ public class Question extends BaseObservable {
         return newQuestion;
     }
 
+    @Bindable
     public int getNumOfReplies() { return numOfReplies; }
 
     public List<Reply> getReplies() { return replies; }
@@ -172,6 +181,15 @@ public class Question extends BaseObservable {
     public void setKey(String key) {
         this.key = key;
     }
+    public void setEcho(int echo) {
+        this.echo = echo;
+        notifyPropertyChanged(BR.echo);
+    }
+    public void setDislikes(int dislikes) {
+        this.dislikes = dislikes;
+        notifyPropertyChanged(BR.dislikes);
+    }
+
     public void setReplies(List<Reply> replies) {
         this.replies = replies;
     }
@@ -181,7 +199,7 @@ public class Question extends BaseObservable {
      * @param other other chat
      * @return order
      */
-    @Override
+    /*
     public int compareTo(Question other) {
         // Push new on top
         other.updateNewQuestion(); // update NEW button
@@ -200,6 +218,7 @@ public class Question extends BaseObservable {
             return this.timestamp > other.timestamp? 1 : -1;
         }
         return 0;
+        */
         /*
         if (this.echo == other.echo) {
             if (other.timestamp == this.timestamp) {
@@ -208,7 +227,9 @@ public class Question extends BaseObservable {
             return other.timestamp > this.timestamp ? -1 : 1;
         }
         return (this.echo - other.echo);*/
+    /*
     }
+    */
 
     @Override
     public boolean equals(Object o) {

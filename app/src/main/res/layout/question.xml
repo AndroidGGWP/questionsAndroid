@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
     <data>
-        <variable name="question" type="hk.ust.cse.hunkim.questionroom.question"/>
+        <variable name="question" type="hk.ust.cse.hunkim.questionroom.question.Question"/>
     </data>
     <LinearLayout
         android:layout_width="fill_parent"
@@ -16,6 +16,7 @@
 
             <TextView
                 android:id="@+id/head_desc"
+                android:text="@{question.msgString}"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="#000000"
@@ -47,6 +48,7 @@
                 android:layout_marginLeft="5dp"/>
             <TextView
                 android:id="@+id/questionEchonum"
+                android:text="@{String.valueOf(question.echo)}"
                 android:layout_centerVertical="true"
                 android:layout_width="wrap_content"
                 android:layout_toLeftOf="@+id/questionDislikeButton"
@@ -63,6 +65,7 @@
                 android:layout_height="wrap_content" />
             <TextView
                 android:id="@+id/questionDislikenum"
+                android:text="@{String.valueOf(question.dislikes)}"
                 android:layout_centerVertical="true"
                 android:layout_width="wrap_content"
                 android:layout_toLeftOf="@+id/questionReplyButton"
@@ -79,6 +82,7 @@
                 android:layout_height="wrap_content" />
             <TextView
                 android:id="@+id/questionReplynum"
+                android:text="@{String.valueOf(question.numOfReplies)}"
                 android:layout_centerVertical="true"
                 android:layout_alignParentRight="true"
                 android:layout_marginRight="10dp"

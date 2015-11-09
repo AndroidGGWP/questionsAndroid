@@ -43,7 +43,7 @@ public class ReplyActivity extends Activity {
         Bundle extras = getIntent().getExtras();
         String questionKey = extras.getString("questionKey");
         final Question question = api.getQuestion(questionKey).getValue();
-        ActivityReplyBinding mBinding = DataBindingUtil.setContentView(this, R.layout.activity_reply);
+        mBinding = DataBindingUtil.setContentView(this, R.layout.activity_reply);
         mBinding.setQuestion(question);
 
         List<Reply> replies = api.getReplies(questionKey).getValue();
