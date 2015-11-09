@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import java.util.List;
+
 import hk.ust.cse.hunkim.questionroom.R;
 import hk.ust.cse.hunkim.questionroom.question.Reply;
 
@@ -14,8 +16,15 @@ import hk.ust.cse.hunkim.questionroom.question.Reply;
  * Created by Yuxuan on 10/30/2015.
  */
 public class ReplyAdapter extends ArrayAdapter{
-    ReplyAdapter(Context context, Reply[] replies){
+    private List<Reply> mReplies;
+    public void addReply(Reply reply) {
+        mReplies.add(reply);
+        notifyDataSetChanged();
+    }
+
+    ReplyAdapter(Context context, List<Reply> replies){
         super(context, R.layout.reply,replies);
+        this.mReplies = replies;
     }
 
     public View getView(int position, View convertView, ViewGroup parent){

@@ -8,17 +8,18 @@ import android.text.Html;
 import android.text.SpannableString;
 import android.text.util.Linkify;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.firebase.client.Query;
 
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.text.SimpleDateFormat;
 import java.lang.String;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import hk.ust.cse.hunkim.questionroom.db.DBUtil;
@@ -31,18 +32,20 @@ import hk.ust.cse.hunkim.questionroom.question.Question;
  * This class is an example of how to use FirebaseListAdapter. It uses the <code>Chat</code> class to encapsulate the
  * data for each individual chat message
  */
-public class QuestionListAdapter extends FirebaseListAdapter<Question> {
+public class QuestionListAdapter extends ArrayAdapter {
 
     // The mUsername for this client. We use this to indicate which messages originated from this user
     private String roomName;
     MainActivity activity;
-
+    private RESTfulAPI api = RESTfulAPI.getInstance();
+    public List<Question> mQuestionList;
     private String StartTime;
     private String EndTime;
     private String Content;
 
-    public QuestionListAdapter(Query ref, Activity activity, int layout, String roomName) {
-        super(ref, Question.class, layout, activity);
+    public QuestionListAdapter(Map<String, String> query, Activity activity, int layout, String roomName) {
+        api.setQuestionList(query);
+        super(activity.getApplicationContext(), Question.class, layout, api.questionList);
         StartTime="";
         EndTime="";
         Content="";
@@ -53,7 +56,7 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
     }
 
     public QuestionListAdapter(Query ref, Activity activity, int layout, String roomName, String Starttime, String Endtime, String content) {
-        super(ref, Question.class, layout, activity);
+        super(activity.getApplicationContext(), layout, questionList);
         StartTime=Starttime;
         EndTime=Endtime;
         Content=content;
@@ -115,9 +118,6 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
     protected void populateView(View view, Question question1) {
         final Question question=question1;
         DBUtil dbUtil = activity.getDbutil();
-        //int echo = question.getEcho();
-        //echoButton.setText("" + echo);
-        //echoButton.setTextColor(Color.BLUE);
 
         // Display question
         String msgString = "";

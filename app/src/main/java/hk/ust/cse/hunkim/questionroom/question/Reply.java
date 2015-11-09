@@ -1,5 +1,7 @@
 package hk.ust.cse.hunkim.questionroom.question;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.Date;
 
 /**
@@ -10,7 +12,9 @@ public class Reply {
      * Must be synced with firebase JSON structure
      * Each must have getters
      */
+    @SerializedName("_id")
     private String key;
+    @SerializedName("wholeMsg")
     private String content;
     private Long timestamp;
     private String time;

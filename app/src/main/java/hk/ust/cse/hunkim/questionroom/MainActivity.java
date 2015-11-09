@@ -25,6 +25,9 @@ import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
 
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import hk.ust.cse.hunkim.questionroom.db.DBHelper;
 import hk.ust.cse.hunkim.questionroom.db.DBUtil;
@@ -32,18 +35,16 @@ import hk.ust.cse.hunkim.questionroom.question.Question;
 
 public class MainActivity extends ListActivity {
 
-    // TODO: change this to your own Firebase URL
-    private static final String FIREBASE_URL = "https://fiery-heat-97.firebaseio.com/";
-
     private String roomName;
-    private Firebase mFirebaseRef;
-    private ValueEventListener mConnectedListener;
     private QuestionListAdapter mChatListAdapter;
     private String StartTime;
     private String EndTime;
     private String Content;
 
     private DBUtil dbutil;
+
+    private RESTfulAPI api = RESTfulAPI.getInstance();
+    private List<Question> mQuestionList;
 
     public DBUtil getDbutil() {
         return dbutil;
@@ -52,8 +53,6 @@ public class MainActivity extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //initialized once with an Android context.
-        Firebase.setAndroidContext(this);
         StartTime = "";
         EndTime = "";
         Content = "";
@@ -71,7 +70,11 @@ public class MainActivity extends ListActivity {
         setTitle("Room name: " + roomName);
 
         // Setup our Firebase mFirebaseRef
-        mFirebaseRef = new Firebase(FIREBASE_URL).child(roomName).child("questions");
+       // mFirebaseRef = new Firebase(FIREBASE_URL).child(roomName).child("questions");
+        Map<String, String> query = new HashMap<>();
+        query.put("roomName", roomName);
+        api.setQuestionList(query);
+        mQuestionList = api.questionList;
 
         // Setup our input methods. Enter key on the keyboard or pushing the send button
         EditText inputText = (EditText) findViewById(R.id.messageInput);
@@ -104,8 +107,10 @@ public class MainActivity extends ListActivity {
         // Setup our view and list adapter. Ensure it scrolls to the bottom as data changes
         final ListView listView = getListView();
         // Tell our list adapter that we only want 200 messages at a time
-        mChatListAdapter = new QuestionListAdapter(
-                mFirebaseRef.orderByChild("order").limitToFirst(200),
+        Map<String, String> query = new HashMap<>();
+        query.put("sortBy", "order");
+        query.put("limit", "200");
+        mChatListAdapter = new QuestionListAdapter(query,
                 this, R.layout.question, roomName);
         listView.setAdapter(mChatListAdapter);
 
@@ -116,24 +121,6 @@ public class MainActivity extends ListActivity {
                 listView.setSelection(mChatListAdapter.getCount() - 1);
             }
         });
-
-        // Finally, a little indication of connection status
-        mConnectedListener = mFirebaseRef.getRoot().child(".info/connected").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                boolean connected = (Boolean) dataSnapshot.getValue();
-                if (connected) {
-                    Toast.makeText(MainActivity.this, "Connected to Firebase", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(MainActivity.this, "Disconnected from Firebase", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {
-                // No-op
-            }
-        });
     }
 
     @Override
@@ -141,8 +128,10 @@ public class MainActivity extends ListActivity {
         super.onResume();
 
         ListView listView = getListView();
-        QuestionListAdapter temChatListAdapter = new QuestionListAdapter(
-                mFirebaseRef.orderByChild("echo").limitToFirst(200),
+        Map<String, String> query = new HashMap<>();
+        query.put("sortBy", "echo");
+        query.put("limit", "200");
+         QuestionListAdapter temChatListAdapter = new QuestionListAdapter(query,
                 this, R.layout.question, roomName, StartTime, EndTime, Content);
         listView.setAdapter(temChatListAdapter);
         temChatListAdapter.notifyDataSetChanged();
@@ -151,8 +140,6 @@ public class MainActivity extends ListActivity {
     @Override
     public void onStop() {
         super.onStop();
-        mFirebaseRef.getRoot().child(".info/connected").removeEventListener(mConnectedListener);
-        mChatListAdapter.cleanup();
     }
 
     private void sendMessage() {
@@ -162,7 +149,7 @@ public class MainActivity extends ListActivity {
             // Create our 'model', a Chat object
             Question question = new Question(input);
             // Create a new, auto-generated child of that chat location, and save our chat data there
-            mFirebaseRef.push().setValue(question);
+            api.saveQuesion(question);
             inputText.setText("");
         }
     }
@@ -172,43 +159,8 @@ public class MainActivity extends ListActivity {
             Log.e("Dupkey", "Key is already in the DB!");
             return;
         }
-
-        final Firebase echoRef = mFirebaseRef.child(key).child("echo");
-        echoRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long echoValue = (Long) dataSnapshot.getValue();
-                        Log.e("Echo update:", "" + echoValue);
-
-                        echoRef.setValue(echoValue + 1);
-
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-                }
-        );
-
-        final Firebase orderRef = mFirebaseRef.child(key).child("order");
-        orderRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long orderValue = (Long) dataSnapshot.getValue();
-                        Log.e("Order update:", "" + orderValue);
-
-                        orderRef.setValue(orderValue + 1);
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-                }
-        );
+        // todo
+        //api.addLike();
 
         // Update SQLite DB
         dbutil.put(key);
@@ -221,42 +173,8 @@ public class MainActivity extends ListActivity {
             return;
         }
 
-        final Firebase dislikesRef = mFirebaseRef.child(key).child("dislikes");
-        dislikesRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long dislikesValue = (Long) dataSnapshot.getValue();
-                        Log.e("Echo update:", "" + dislikesValue);
-
-                        dislikesRef.setValue(dislikesValue + 1);
-
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-                }
-        );
-
-        final Firebase orderRef = mFirebaseRef.child(key).child("order");
-        orderRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long orderValue = (Long) dataSnapshot.getValue();
-                        Log.e("Order update:", "" + orderValue);
-
-                        orderRef.setValue(orderValue - 1);
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-                }
-        );
+        // todo
+        // api.addDislikes();
 
         // Update SQLite DB
         dbutil.put(key);
@@ -265,7 +183,7 @@ public class MainActivity extends ListActivity {
 
     public void enterReply(String key) {
         Intent intent = new Intent(this, ReplyActivity.class);
-        intent.putExtra("questionRef", FIREBASE_URL+roomName+"/questions/"+key);
+        intent.putExtra("questionKey", key);
         startActivity(intent);
     }
 
@@ -278,9 +196,10 @@ public class MainActivity extends ListActivity {
         EndTime="";
         Content="";
         ListView listView = getListView();
-        QuestionListAdapter temChatListAdapter = new QuestionListAdapter(
-                mFirebaseRef.orderByChild("echo").limitToFirst(200),
-                this, R.layout.question, roomName);
+        Map<String, String> query = new HashMap<>();
+        query.put("sortBy", "echo");
+        query.put("limit", "200");
+        QuestionListAdapter temChatListAdapter = new QuestionListAdapter(query, this, R.layout.question, roomName);
         listView.setAdapter(temChatListAdapter);
     }
 

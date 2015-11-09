@@ -1,5 +1,9 @@
 package hk.ust.cse.hunkim.questionroom.question;
 
+import android.databinding.BaseObservable;
+
+import com.google.gson.annotations.SerializedName;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -9,13 +13,15 @@ import hk.ust.cse.hunkim.questionroom.FirebaseListAdapter;
 /**
  * Created by hunkim on 7/16/15.
  */
-public class Question implements Comparable<Question> {
+public class Question extends BaseObservable {
 
     /**
      * Must be synced with firebase JSON structure
      * Each must have getters
      */
+    @SerializedName("_id")
     private String key;
+
     private String wholeMsg;
     private String head;
     private String headLastChar;
@@ -24,8 +30,11 @@ public class Question implements Comparable<Question> {
     private boolean completed;
     private long timestamp;
     private String tags;
-    private int echo;
-    private int dislikes;
+    public int echo;
+
+    @SerializedName("hate")
+    public int dislikes;
+
     private int order;
     private boolean newQuestion;
     private int numOfReplies;
@@ -162,6 +171,9 @@ public class Question implements Comparable<Question> {
 
     public void setKey(String key) {
         this.key = key;
+    }
+    public void setReplies(List<Reply> replies) {
+        this.replies = replies;
     }
 
     /**
