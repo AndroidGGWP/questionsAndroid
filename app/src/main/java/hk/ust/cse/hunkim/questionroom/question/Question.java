@@ -23,6 +23,7 @@ public class Question extends BaseObservable {
     @SerializedName("_id")
     private String key;
 
+    private String roomName;
     private String wholeMsg;
     private String head;
     private String headLastChar;

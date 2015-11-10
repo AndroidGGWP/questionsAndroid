@@ -3,9 +3,9 @@ package hk.ust.cse.hunkim.questionroom;
 
 import android.app.ListActivity;
 import android.content.Intent;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -16,10 +16,9 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 
-
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,6 @@ public class MainActivity extends ListActivity {
     private String StartTime;
     private String EndTime;
     private String Content;
-
     private DBUtil dbutil;
 
     public DBUtil getDbutil() {
@@ -46,6 +44,9 @@ public class MainActivity extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+
         StartTime = "";
         EndTime = "";
         Content = "";
@@ -64,8 +65,10 @@ public class MainActivity extends ListActivity {
 
         Map<String, String> query = new HashMap<>();
         query.put("roomName", roomName);
-        mAPI.setQuestionList(query);
-        List<Question> questions = mAPI.questionList;
+        List<Question> questions = mAPI.getQuestionList(query);
+        ListView listView = getListView();
+        mQuestionAdapter = new QuestionAdapter(getBaseContext(), questions);
+        listView.setAdapter(mQuestionAdapter);
 
         // Setup our input methods. Enter key on the keyboard or pushing the send button
         EditText inputText = (EditText) findViewById(R.id.messageInput);
@@ -85,12 +88,9 @@ public class MainActivity extends ListActivity {
                 sendMessage();
             }
         });
-
-        // get the DB Helper
-        DBHelper mDbHelper = new DBHelper(this);
-        dbutil = new DBUtil(mDbHelper);
     }
 
+    /*
     @Override
     public void onStart() {
         super.onStart();
@@ -101,9 +101,9 @@ public class MainActivity extends ListActivity {
         Map<String, String> query = new HashMap<>();
         query.put("sortBy", "order");
         query.put("limit", "200");
-        mAPI.setQuestionList(query);
-        mQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.questionList);
+        mQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.getQuestionList(query));
         listView.setAdapter(mQuestionAdapter);
+        mQuestionAdapter.notifyDataSetChanged(); // ??? needed ???
     }
 
     @Override
@@ -114,11 +114,12 @@ public class MainActivity extends ListActivity {
         Map<String, String> query = new HashMap<>();
         query.put("sortBy", "echo");
         query.put("limit", "200");
-        mAPI.setQuestionList(query);
-        QuestionAdapter temQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.questionList);
+        // why use temp adapter
+        QuestionAdapter temQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.getQuestionList(query));
         listView.setAdapter(temQuestionAdapter);
         temQuestionAdapter.notifyDataSetChanged();
     }
+    */
 
     @Override
     public void onStop() {
@@ -132,37 +133,11 @@ public class MainActivity extends ListActivity {
             // Create our 'model', a Chat object
             Question question = new Question(input);
             // Create a new, auto-generated child of that chat location, and save our chat data there
-            mAPI.saveQuesion(question);
+            mQuestionAdapter.addQuestion(question);
             inputText.setText("");
         }
     }
 
-    public void updateEcho(String key) {
-        if (dbutil.contains(key)) {
-            Log.e("Dupkey", "Key is already in the DB!");
-            return;
-        }
-        // todo
-        //api.addLike();
-
-        // Update SQLite DB
-        dbutil.put(key);
-
-    }
-
-    public void updateDislikes(String key) {
-        if (dbutil.contains(key)) {
-            Log.e("Dupkey", "Key is already in the DB!");
-            return;
-        }
-
-        // todo
-        // api.addDislikes();
-
-        // Update SQLite DB
-        dbutil.put(key);
-
-    }
 
     public void enterReply(String key) {
         Intent intent = new Intent(this, ReplyActivity.class);
@@ -182,8 +157,7 @@ public class MainActivity extends ListActivity {
         Map<String, String> query = new HashMap<>();
         query.put("sortBy", "echo");
         query.put("limit", "200");
-        mAPI.setQuestionList(query);
-        QuestionAdapter temQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.questionList);
+        QuestionAdapter temQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.getQuestionList(query));
         listView.setAdapter(temQuestionAdapter);
     }
 

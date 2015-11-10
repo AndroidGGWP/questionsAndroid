@@ -3,24 +3,12 @@ package hk.ust.cse.hunkim.questionroom;
 import android.app.Activity;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
-import android.media.Image;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
-
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import hk.ust.cse.hunkim.questionroom.databinding.ActivityReplyBinding;
@@ -29,9 +17,10 @@ import hk.ust.cse.hunkim.questionroom.question.Reply;
 
 public class ReplyActivity extends Activity {
 
-    private RESTfulAPI api = RESTfulAPI.getInstance();
+    private RESTfulAPI mAPI = RESTfulAPI.getInstance();
     private ActivityReplyBinding mBinding;
     private ReplyAdapter mReplyAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,11 +31,11 @@ public class ReplyActivity extends Activity {
 
         Bundle extras = getIntent().getExtras();
         String questionKey = extras.getString("questionKey");
-        final Question question = api.getQuestion(questionKey).getValue();
+        final Question question = mAPI.getQuestion(questionKey);
         mBinding = DataBindingUtil.setContentView(this, R.layout.activity_reply);
         mBinding.setQuestion(question);
 
-        List<Reply> replies = api.getReplies(questionKey).getValue();
+        List<Reply> replies = mAPI.getReplies(questionKey);
         mReplyAdapter = new ReplyAdapter(getBaseContext(), replies);
         ListView replyListView = (ListView) findViewById(R.id.replyList);
         replyListView.setAdapter(mReplyAdapter);
@@ -70,7 +59,7 @@ public class ReplyActivity extends Activity {
     }
 
     public void sendReply(Question question, Reply reply){
-        api.saveReply(question, reply);
+        mAPI.saveReply(reply);
         mReplyAdapter.addReply(reply);
     }
 

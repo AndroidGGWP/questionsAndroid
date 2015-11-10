@@ -1,7 +1,9 @@
 package hk.ust.cse.hunkim.questionroom;
 
 import android.content.Context;
+import android.content.Intent;
 import android.databinding.DataBindingUtil;
+import android.text.Html;
 import android.text.SpannableString;
 import android.text.util.Linkify;
 import android.view.LayoutInflater;
@@ -16,14 +18,18 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import hk.ust.cse.hunkim.questionroom.databinding.QuestionBinding;
+import hk.ust.cse.hunkim.questionroom.db.DBUtil;
 import hk.ust.cse.hunkim.questionroom.question.Question;
+import hk.ust.cse.hunkim.questionroom.question.Reply;
 
 /**
  * Created by Teman on 11/9/2015.
  */
 public class QuestionAdapter extends ArrayAdapter<Question> {
+    private RESTfulAPI mAPI = RESTfulAPI.getInstance();
     private List<Question> mQuestionList;
     private LayoutInflater mInflater;
+    private Context mContext;
     private String StartTime;
     private String EndTime;
     private String Content;
@@ -31,6 +37,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
     public QuestionAdapter(Context context, List<Question> questions) {
         super(context, 0, questions);
         mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mContext = context;
         mQuestionList = questions;
         StartTime="";
         EndTime="";
@@ -40,6 +47,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
     public QuestionAdapter(Context context, List<Question> questions, String startTime, String endTime, String content) {
         super(context, 0, questions);
         mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mContext = context;
         mQuestionList = questions;
         StartTime = startTime;
         EndTime = endTime;
@@ -57,8 +65,6 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
         binding.setQuestion(question);
         convertView = binding.getRoot();
 
-        /*
-        // todo
         // Display question
         String msgString = "";
         question.updateNewQuestion();
@@ -66,10 +72,9 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
             msgString += "<font color=red>NEW </font>";
         }
         msgString += "<B>" + question.getHead() + "</B>" + question.getDesc();
-        ((TextView) view.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
-        */
+        ((TextView) convertView.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
 
-        // Like button&number
+        // Like button
         ImageButton echoButton = (ImageButton) convertView.findViewById(R.id.questionEchoButton);
         echoButton.setTag(question.getKey()); // Set tag for button
         echoButton.setOnClickListener(
@@ -81,6 +86,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
                 }
         );
 
+        // Dislike button
         ImageButton dislikeButton = (ImageButton) convertView.findViewById(R.id.questionDislikeButton);
         dislikeButton.setTag(question.getKey()); // Set tag for button
         dislikeButton.setOnClickListener(
@@ -92,6 +98,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
                 }
         );
 
+        // reply button
         ImageButton replyButton = (ImageButton) convertView.findViewById(R.id.questionReplyButton);
         replyButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -117,10 +124,11 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
     public void addQuestion(Question question) {
         mQuestionList.add(question);
         notifyDataSetChanged();
+        mAPI.saveQuesion(question);
     }
 
     private void enterReply(String questionKey) {
-
+        ((MainActivity)mContext).enterReply(questionKey);
     }
 
     /*

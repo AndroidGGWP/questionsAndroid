@@ -1,15 +1,13 @@
 package hk.ust.cse.hunkim.questionroom;
 
-import hk.ust.cse.hunkim.questionroom.question.Question;
-import hk.ust.cse.hunkim.questionroom.question.Reply;
-import hk.ust.cse.hunkim.questionroom.APIService;
-
 import android.util.Log;
 
-import com.google.gson.Gson;
+import hk.ust.cse.hunkim.questionroom.question.Question;
+import hk.ust.cse.hunkim.questionroom.question.Reply;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,14 +21,12 @@ import retrofit.Retrofit;
  * Created by Teman on 11/6/2015.
  */
 public class RESTfulAPI {
-    public static RESTfulAPI instance = new RESTfulAPI();
+    private static RESTfulAPI instance = new RESTfulAPI();
     private String baseURL = "http://52.74.132.232:5000/api/";
-    public List<Question> questionList;
-    public Retrofit retrofit;
-    public APIService service;
+    //public List<Question> questionList;
+    private Retrofit retrofit;
+    private APIService service;
     private Map<String, Question> idQuestionMap;
-    private Question mDummyQuestion = new Question("");
-    private List<Reply> mDummyReplies = new ArrayList<Reply>();
 
     private RESTfulAPI() {
         retrofit = new Retrofit.Builder()
@@ -38,124 +34,48 @@ public class RESTfulAPI {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         service = retrofit.create(APIService.class);
+        idQuestionMap = new HashMap<>();
     }
 
     public static RESTfulAPI getInstance(){
         return instance;
     }
 
-    private RESTfulAPI(Map<String, String> query) {
-        retrofit = new Retrofit.Builder()
-                .baseUrl(baseURL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        service = retrofit.create(APIService.class);
-        setQuestionList(query);
-    }
-
-    public void setQuestionList(Map<String, String> query) {
-        Call<List<Question>> call = service.getQuestionList(query);
-        call.enqueue(new Callback<List<Question>>() {
-            @Override
-            public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
-                List<Question> list = response.body();
-                if (list != null) {
-                    questionList = list;
-                    for (final Question q : questionList) {
-                        idQuestionMap.put(q.getKey(), q);
-                        Call<List<Reply>> call = service.getReplyList(q.getKey());
-                        call.enqueue(new Callback<List<Reply>>() {
-                            @Override
-                            public void onResponse(Response<List<Reply>> response, Retrofit retrofit) {
-                                List<Reply> replies = response.body();
-                                if (replies != null)
-                                    q.setReplies(replies);
-                                else
-                                    q.setReplies(new ArrayList<Reply>());
-                            }
-
-                            @Override
-                            public void onFailure(Throwable t) {
-
-                            }
-                        });
-                    }
-                } else {
-                    // error;
-                    questionList = new ArrayList<Question>();
-                }
+    public List<Question> getQuestionList(Map<String, String> query) {
+        try {
+            List<Question> questions = service.getQuestionList(query).execute().body();
+            for(Question q : questions) {
+                idQuestionMap.put(q.getKey(), q);
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
+            return questions;
+        }catch (IOException e) {
+            // error handling
+            return new ArrayList<Question>();
+        }
     }
 
     public void addLike(Question question) {
-        question.echo += 1;
-        service.updateQuestion(question.getKey(), question).enqueue(new Callback<Question>() {
-            @Override
-            public void onResponse(Response<Question> response, Retrofit retrofit) {
 
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
     }
 
     public void addDislike(Question question) {
-        question.dislikes += 1;
-        service.updateQuestion(question.getKey(), question).enqueue(new Callback<Question>() {
-            @Override
-            public void onResponse(Response<Question> response, Retrofit retrofit) {
 
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
     }
 
-    Holder<Question> getQuestion(String id) {
-        final Holder<Question> holder = new Holder<>(mDummyQuestion);
-        service.getQuestion(id).enqueue(new Callback<Question>() {
-            @Override
-            public void onResponse(Response<Question> response, Retrofit retrofit) {
-                Question q = response.body();
-                if(q != null)
-                    holder.setValue(q);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
-        return holder;
+    Question getQuestion(String id) {
+        try{
+            return service.getQuestion(id).execute().body();
+        }catch (IOException e){
+            return new Question("");
+        }
     }
 
-    public void saveQuesion(Question question) {
-        Call<Question> call = service.saveQuestion(question);
-        call.enqueue(new Callback<Question>() {
-            @Override
-            public void onResponse(Response<Question> response, Retrofit retrofit) {
-                Question q = response.body();
-                if (q != null)
-                    question.setKey(q.getKey());
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
+    public Question saveQuesion(Question question) {
+        try{
+            return service.saveQuestion(question).execute().body();
+        }catch (IOException e){
+            return new Question("");
+        }
     }
 
     public void updateQuestion(Question question) {
@@ -177,39 +97,20 @@ public class RESTfulAPI {
         service.deleteQuestion(question.getKey());
     }
 
-    public Holder<List<Reply>> getReplies(String questionKey) {
-        final Holder<List<Reply>> repliesHolder = new Holder<>(mDummyReplies);
-        service.getReplyList(questionKey).enqueue(new Callback<List<Reply>>() {
-            @Override
-            public void onResponse(Response<List<Reply>> response, Retrofit retrofit) {
-                List<Reply> replies = response.body();
-                if(replies != null)
-                    repliesHolder.setValue(replies);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
-        return repliesHolder;
+    public List<Reply> getReplies(String questionKey) {
+        try{
+            return service.getReplyList(questionKey).execute().body();
+        }catch (IOException e){
+            return new ArrayList<>();
+        }
     }
 
-    public void saveReply(Question question, final Reply reply) {
-        Call<Reply> call = service.saveReply(reply);
-        call.enqueue(new Callback<Reply>() {
-            @Override
-            public void onResponse(Response<Reply> response, Retrofit retrofit) {
-                Reply r = response.body();
-                if(r != null)
-                    reply.setKey(r.getKey());
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
+    public Reply saveReply(Reply reply) {
+        try{
+            return service.saveReply(reply).execute().body();
+        }catch (IOException e){
+            return new Reply("");
+        }
     }
 
     public void updateReply(Reply reply) {
