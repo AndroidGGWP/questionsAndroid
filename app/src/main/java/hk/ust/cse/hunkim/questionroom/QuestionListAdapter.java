@@ -125,7 +125,17 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
         if (question.isNewQuestion()) {
             msgString += "<font color=red>NEW </font>";
         }
-        msgString += "<B>" + question.getHead() + "</B>" + question.getDesc();
+        // preprocessing the head and desc, replace '<' and '>' with &lt and &gt
+
+        String newHead = question.getHead();
+        String newDesc = question.getDesc();
+
+        newHead = newHead.replace("<", "&lt;");
+        newHead = newHead.replace(">", "&gt;");
+        newDesc = newDesc.replace("<", "&lt;");
+        newDesc = newDesc.replace(">", "&gt;");
+        msgString += "<B>" + newHead + "</B>" + newDesc;
+        //msgString += "<B>" + question.getHead() + "</B>" + question.getDesc();
         ((TextView) view.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
 
         // Question posted time
@@ -176,7 +186,7 @@ public class QuestionListAdapter extends FirebaseListAdapter<Question> {
 
 
         TextView hashView = (TextView) view.findViewById(R.id.head_desc);
-        SpannableString ss = new SpannableString(hashView.getText().toString());
+        //SpannableString ss = new SpannableString(hashView.getText().toString());
         Pattern tagPattern = Pattern.compile("[#]+[A-Za-z0-9-_]+\\b");
         //Matcher tagMatcher = tagPattern.matcher(ss);
 
