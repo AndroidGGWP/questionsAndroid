@@ -5,7 +5,6 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -26,16 +25,26 @@ import java.util.Map;
 import hk.ust.cse.hunkim.questionroom.db.DBHelper;
 import hk.ust.cse.hunkim.questionroom.db.DBUtil;
 import hk.ust.cse.hunkim.questionroom.question.Question;
+import retrofit.Callback;
+import retrofit.Response;
+import retrofit.Retrofit;
+
+import com.github.nkzawa.emitter.Emitter;
+import com.github.nkzawa.socketio.client.IO;
+import com.github.nkzawa.socketio.client.Socket;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MainActivity extends ListActivity {
 
-    private String roomName;
+    private String mRoomName;
     private QuestionAdapter mQuestionAdapter;
-    private RESTfulAPI mAPI = RESTfulAPI.getInstance();
-    private String StartTime;
-    private String EndTime;
-    private String Content;
+    private RESTfulAPI mAPI;
     private DBUtil dbutil;
+    private Socket mSocket;
 
     public DBUtil getDbutil() {
         return dbutil;
@@ -44,31 +53,45 @@ public class MainActivity extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-
-        StartTime = "";
-        EndTime = "";
-        Content = "";
         setContentView(R.layout.activity_main);
 
+
+        dbutil = new DBUtil(new DBHelper(this));
         Intent intent = getIntent();
         assert (intent != null);
 
         // Make it a bit more reliable
-        roomName = intent.getStringExtra(JoinActivity.ROOM_NAME);
-        if (roomName == null || roomName.length() == 0) {
-            roomName = "all";
+        mRoomName = intent.getStringExtra(JoinActivity.ROOM_NAME);
+        if (mRoomName == null || mRoomName.length() == 0) {
+            mRoomName = "all";
         }
 
-        setTitle("Room name: " + roomName);
+        mQuestionAdapter = new QuestionAdapter(this, new ArrayList<Question>());
+        mAPI = RESTfulAPI.getInstance();
+        createSocketEventListener();
+        setTitle("Room name: " + mRoomName);
+
+        ListView listView = getListView();
+        listView.setAdapter(mQuestionAdapter);
 
         Map<String, String> query = new HashMap<>();
-        query.put("roomName", roomName);
-        List<Question> questions = mAPI.getQuestionList(query);
-        ListView listView = getListView();
-        mQuestionAdapter = new QuestionAdapter(getBaseContext(), questions);
-        listView.setAdapter(mQuestionAdapter);
+        query.put("roomName", mRoomName);
+        mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
+            @Override
+            public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
+                List<Question> questions = response.body();
+                if (questions != null) {
+                    mQuestionAdapter.setQuestionList(questions);
+                } else {
+                    Log.e("Empty response body", "Null question list");
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        });
 
         // Setup our input methods. Enter key on the keyboard or pushing the send button
         EditText inputText = (EditText) findViewById(R.id.messageInput);
@@ -105,25 +128,106 @@ public class MainActivity extends ListActivity {
         listView.setAdapter(mQuestionAdapter);
         mQuestionAdapter.notifyDataSetChanged(); // ??? needed ???
     }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        ListView listView = getListView();
-        Map<String, String> query = new HashMap<>();
-        query.put("sortBy", "echo");
-        query.put("limit", "200");
-        // why use temp adapter
-        QuestionAdapter temQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.getQuestionList(query));
-        listView.setAdapter(temQuestionAdapter);
-        temQuestionAdapter.notifyDataSetChanged();
-    }
     */
+
+    public void Reset_Search(View view) {
+        Map<String, String> query = new HashMap<>();
+        query.put("roomName", mRoomName);
+        mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
+            @Override
+            public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
+                List<Question> questions = response.body();
+                if (questions != null) {
+                    mQuestionAdapter.setQuestionList(questions);
+                } else {
+                    Log.e("Empty Response Body", "Null question list");
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        });
+    }
 
     @Override
     public void onStop() {
         super.onStop();
+    }
+
+    private void createSocketEventListener() {
+        mSocket = mAPI.getSocket();
+        mSocket.on("new post", new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Gson gson = new Gson();
+                        Question question = gson.fromJson(args[0].toString(), Question.class);
+                        mQuestionAdapter.insertQuestion(question, 0);
+                        //mQuestionAdapter.addQuestion(question);
+                        //mQuestionAdapter.sortQuestionList();
+                    }
+                });
+            }
+        }).on("del post", new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String key = (String) args[0];
+                        mQuestionAdapter.removeQuestion(key);
+                    }
+                });
+            }
+        }).on("like post", new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                try {
+                    String key = data.getString("id");
+                    int numOfLikes = data.getInt("like");
+                    int order = data.getInt("order");
+                    mQuestionAdapter.likeQuestion(key, numOfLikes, order);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    return;
+                }
+            }
+        }).on("dislike post", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                try {
+                    String key = data.getString("id");
+                    int numOfDislikes = data.getInt("dislike");
+                    int order = data.getInt("order");
+                    mQuestionAdapter.dislikeQuestion(key, numOfDislikes, order);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    return;
+                }
+            }
+        });
+        mSocket.connect();
+        mSocket.emit("join", mRoomName);
+    }
+
+    public void emitLikeQuestion(String questionKey) {
+        if(dbutil.contains(questionKey))
+            return;
+        mSocket.emit("like post", questionKey);
+        dbutil.put(questionKey);
+    }
+
+    public void emitDislikeQuestion(String questionKey) {
+        if(dbutil.contains(questionKey))
+            return;
+        mSocket.emit("dislike post", questionKey);
+        dbutil.put(questionKey);
     }
 
     private void sendMessage() {
@@ -131,9 +235,26 @@ public class MainActivity extends ListActivity {
         String input = inputText.getText().toString();
         if (!input.equals("")) {
             // Create our 'model', a Chat object
-            Question question = new Question(input);
+            Question question = new Question(input, mRoomName);
             // Create a new, auto-generated child of that chat location, and save our chat data there
-            mQuestionAdapter.addQuestion(question);
+            mAPI.saveQuesion(question).enqueue(new Callback<Question>() {
+                @Override
+                public void onResponse(Response<Question> response, Retrofit retrofit) {
+                    Question question = response.body();
+                    if(question != null) {
+                        mSocket.emit("new post", question.getKey());
+                        //mQuestionAdapter.insertQuestion(question, 0);
+                    }
+                    else {
+                        Log.e("Empty Response Body", "Null Question");
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+
+                }
+            });
             inputText.setText("");
         }
     }
@@ -149,59 +270,92 @@ public class MainActivity extends ListActivity {
         finish();
     }
 
-    public void Reset_Search(View view){
-        StartTime="";
-        EndTime="";
-        Content="";
-        ListView listView = getListView();
-        Map<String, String> query = new HashMap<>();
-        query.put("sortBy", "echo");
-        query.put("limit", "200");
-        QuestionAdapter temQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.getQuestionList(query));
-        listView.setAdapter(temQuestionAdapter);
+    private String toTimestamp(String Time) {
+        long currentTime= System.currentTimeMillis();
+        long returnTime=0;
+        if (Time.contains("Now")){
+            returnTime=currentTime;
+        } else if (Time.contains("1 hour ago")){
+            returnTime=currentTime-3600*1000;
+        } else if (Time.contains("2 hours ago")){
+            returnTime=currentTime-2*3600*1000;
+        } else if (Time.contains("1 day ago")){
+            returnTime=currentTime-24*3600*1000;
+        } else if (Time.contains("1 week ago")){
+            returnTime=currentTime-7*24*3600*1000;
+        } else if (Time.contains("30 days ago")){
+            returnTime=currentTime- 2592000000L;
+        } else if (Time.contains("365 days ago")){
+            returnTime=currentTime-31536000000L;
+        } else if (Time.contains("The Start")){
+            returnTime=0L;
+        }
+        return String.valueOf(returnTime);
     }
-
-
 
     public void Search(View view) {
         Intent intent = new Intent(this, SearchActivity.class);
-        intent.putExtra("Room Name", roomName);
+        intent.putExtra("Room Name", mRoomName);
         startActivityForResult(intent, 1);
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(final int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
-            String newStartTime = data.getExtras().getString("StartTime");
-            String newEndTime = data.getExtras().getString("EndTime");
-            String newContent = data.getExtras().getString("Content");
-            StartTime = newStartTime;
-            EndTime = newEndTime;
-            Content = newContent;
-        }
+            String startTime = toTimestamp(data.getExtras().getString("StartTime"));
+            String endTime = toTimestamp(data.getExtras().getString("EndTime"));
+            String content = data.getExtras().getString("Content");
+            final Map<String, String> query = new HashMap<>();
+            query.put("roomName", mRoomName);
+            query.put("startTime", startTime);
+            query.put("endTime", endTime);
+            query.put("content", content);
+            mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
+                @Override
+                public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
+                    List<Question> questions = response.body();
+                    if(questions != null) {
+                        mQuestionAdapter.setQuestionList(questions);
+                    }
+                    else {
+                        Log.e("Empty Response Body", "Null Question List");
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+
+                }
+            });
+         }
     }
+
     @Override
     public void startActivity(Intent intent) {
         if (TextUtils.equals(intent.getAction(), Intent.ACTION_VIEW)) {
-            //Intent i = new Intent(this,MainActivity.class);
-            Intent i = new Intent(this,SearchActivity.class);
             Uri uri = intent.getData();
             //strip off hashtag from the URI
             String tag=uri.toString();
-           /* System.out.println(tag.substring(3));
-            i.putExtra("StartTime", "The Start");
-            i.putExtra("EndTime", "Now");
-            i.putExtra("Content", "#test");
-            i.putExtra("Room Name", roomName);
+            //System.out.println(tag.substring(3));
+            Map<String, String> query = new HashMap<>();
+            query.put("roomName", mRoomName);
+            query.put("content", tag.substring(3));
+            mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
+                @Override
+                public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
+                    List<Question> questions = response.body();
+                    if (questions != null) {
+                        mQuestionAdapter.setQuestionList(questions);
+                    } else {
+                        Log.e("Empty Response Body", "Null Question List");
+                    }
+                }
 
+                @Override
+                public void onFailure(Throwable t) {
 
-            //MainActivity.this.setResult(RESULT_OK, i);
-            startActivity(i);*/
-            System.out.println(tag.substring(3).length());
-            i.putExtra("hash",tag.substring(3)+ " ");
-            intent.putExtra("Room Name", roomName);
-            startActivityForResult(i, 1);
-            //startActivity(i);
+                }
+            });
         }
         else {
             super.startActivity(intent);

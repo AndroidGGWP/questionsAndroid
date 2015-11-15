@@ -1,33 +1,42 @@
 package hk.ust.cse.hunkim.questionroom.question;
 
+import android.databinding.BaseObservable;
+import android.databinding.Bindable;
+
 import com.google.gson.annotations.SerializedName;
 
 import java.util.Date;
 
+import hk.ust.cse.hunkim.questionroom.TimeDisplay;
+
 /**
  * Created by Yuxuan on 10/26/2015.
  */
-public class Reply {
+public class Reply extends BaseObservable {
     /**
      * Must be synced with firebase JSON structure
      * Each must have getters
      */
     @SerializedName("_id")
     private String key;
+
     @SerializedName("wholeMsg")
     private String content;
-    private Long timestamp;
-    private String time;
 
-    public Reply (String reply){
-        this.content = reply;
+    @SerializedName("postId")
+    private String questionKey;
+    private Long timestamp;
+
+    public Reply (String content, String questionKey){
+        this.content = content;
+        this.timestamp = new Date().getTime();
+        this.questionKey = questionKey;
+    }
+
+    public Reply (String content){
+        this.content = content;
         this.timestamp = new Date().getTime();
     }
-    public Reply (String reply, String time){
-        this.content = reply;
-        this.time = time;
-    }
-
 
     // Required default constructor for Firebase object mapping
     private Reply() {
@@ -37,10 +46,22 @@ public class Reply {
     public String getKey() { return key; }
     public String getContent() { return content; }
     public Long getTimestamp() { return timestamp; }
-    public String getTime() { return time; }
 
+    @Bindable
+    public String getTimeDisplay() {
+        TimeDisplay timeDisplay = new TimeDisplay(timestamp);
+        return timeDisplay.getOutputTime();
+    }
 
     public void setKey(String key) {
         this.key = key;
+    }
+
+    public String getQuestionKey() {
+        return questionKey;
+    }
+
+    public void setQuestionKey(String questionKey) {
+        this.questionKey = questionKey;
     }
 }

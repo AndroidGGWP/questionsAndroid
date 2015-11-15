@@ -38,31 +38,33 @@ public class Question extends BaseObservable {
     public int dislikes;
 
     private int order;
-    private boolean newQuestion;
+
     private int numOfReplies;
     private List<Reply> replies;
 
-    public String getDateString() {
-        return dateString;
-    }
-
-    private String dateString;
-
-    public String getTrustedDesc() {
-        return trustedDesc;
-    }
-
-    private String trustedDesc;
-
-    // Required default constructor for Firebase object mapping
-    @SuppressWarnings("unused")
-    private Question() {
-    }
 
     /**
      * Set question from a String message
      * @param message string message
      */
+    public Question(String message, String roomName) {
+        this.wholeMsg = message;
+        this.echo = 0;
+        this.dislikes = 0;
+        this.head = getFirstSentence(message).trim();
+        this.desc = "";
+        this.roomName = roomName;
+        if (this.head.length() < message.length()) {
+            this.desc = message.substring(this.head.length());
+        }
+
+        // get the last char
+        this.headLastChar = head.substring(head.length() - 1);
+        this.timestamp = new Date().getTime();
+        this.replies = new ArrayList<Reply>();
+        this.numOfReplies = 0;
+    }
+
     public Question(String message) {
         this.wholeMsg = message;
         this.echo = 0;
@@ -123,7 +125,12 @@ public class Question extends BaseObservable {
 
     @Bindable
     public String getMsgString() {
-        return "<font color=red>NEW </font>" + "<B>" + head + "<B>" + desc;
+        String msgString = "";
+        if (isNewQuestion()) {
+            msgString += "<font color=red>NEW </font>";
+        }
+        msgString += "<B>" + head + "</B>" + desc;
+        return msgString;
     }
 
     @Bindable
@@ -162,18 +169,11 @@ public class Question extends BaseObservable {
         return order;
     }
 
-    public boolean isNewQuestion() {
-        return newQuestion;
-    }
-
     @Bindable
     public int getNumOfReplies() { return numOfReplies; }
 
     public List<Reply> getReplies() { return replies; }
 
-    public void updateNewQuestion() {
-        newQuestion = this.timestamp > new Date().getTime() - 180000;
-    }
 
     public String getKey() {
         return key;
@@ -182,10 +182,16 @@ public class Question extends BaseObservable {
     public void setKey(String key) {
         this.key = key;
     }
+
     public void setEcho(int echo) {
         this.echo = echo;
         notifyPropertyChanged(BR.echo);
     }
+
+    public void setOrder(int order) {
+        this.order = order;
+    }
+
     public void setDislikes(int dislikes) {
         this.dislikes = dislikes;
         notifyPropertyChanged(BR.dislikes);
@@ -195,42 +201,9 @@ public class Question extends BaseObservable {
         this.replies = replies;
     }
 
-    /**
-     * New one/high echo goes bottom
-     * @param other other chat
-     * @return order
-     */
-    /*
-    public int compareTo(Question other) {
-        // Push new on top
-        other.updateNewQuestion(); // update NEW button
-        this.updateNewQuestion();
-
-        if (this.newQuestion != other.newQuestion) {
-            return this.newQuestion ? 1 : -1; // this is the winner
-        }
-        if (this.echo != other.echo){
-            return this.echo > other.echo? 1 : -1;
-        }
-        if (this.dislikes != other.dislikes){
-            return this.dislikes < other.dislikes? 1 : -1;
-        }
-        if (this.timestamp != other.timestamp){
-            return this.timestamp > other.timestamp? 1 : -1;
-        }
-        return 0;
-        */
-        /*
-        if (this.echo == other.echo) {
-            if (other.timestamp == this.timestamp) {
-                return 0;
-            }
-            return other.timestamp > this.timestamp ? -1 : 1;
-        }
-        return (this.echo - other.echo);*/
-    /*
+    public boolean isNewQuestion() {
+        return (this.timestamp > new Date().getTime() - 180000);
     }
-    */
 
     @Override
     public boolean equals(Object o) {

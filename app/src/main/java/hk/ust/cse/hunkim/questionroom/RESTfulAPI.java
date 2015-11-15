@@ -2,10 +2,14 @@ package hk.ust.cse.hunkim.questionroom;
 
 import android.util.Log;
 
+import com.github.nkzawa.socketio.client.IO;
+import com.github.nkzawa.socketio.client.Socket;
+
 import hk.ust.cse.hunkim.questionroom.question.Question;
 import hk.ust.cse.hunkim.questionroom.question.Reply;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,36 +26,36 @@ import retrofit.Retrofit;
  */
 public class RESTfulAPI {
     private static RESTfulAPI instance = new RESTfulAPI();
-    private String baseURL = "http://52.74.132.232:5000/api/";
-    //public List<Question> questionList;
+    private String serverURL = "http://54.169.201.112";
+    //private String serverURL = "http://54.254.251.203";
     private Retrofit retrofit;
     private APIService service;
-    private Map<String, Question> idQuestionMap;
+    private Socket mSocket;
+
+    public Socket getSocket() {
+        return mSocket;
+    }
 
     private RESTfulAPI() {
+        String baseURL = serverURL + ":5000/api/";
         retrofit = new Retrofit.Builder()
                 .baseUrl(baseURL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         service = retrofit.create(APIService.class);
-        idQuestionMap = new HashMap<>();
+        try {
+            mSocket = IO.socket(serverURL + ":3000");
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
     public static RESTfulAPI getInstance(){
         return instance;
     }
 
-    public List<Question> getQuestionList(Map<String, String> query) {
-        try {
-            List<Question> questions = service.getQuestionList(query).execute().body();
-            for(Question q : questions) {
-                idQuestionMap.put(q.getKey(), q);
-            }
-            return questions;
-        }catch (IOException e) {
-            // error handling
-            return new ArrayList<Question>();
-        }
+    public Call<List<Question>> getQuestionList(Map<String, String> query) {
+        return service.getQuestionList(query);
     }
 
     public void addLike(Question question) {
@@ -62,70 +66,32 @@ public class RESTfulAPI {
 
     }
 
-    Question getQuestion(String id) {
-        try{
-            return service.getQuestion(id).execute().body();
-        }catch (IOException e){
-            return new Question("");
-        }
+    Call<Question> getQuestion(String id) {
+        return service.getQuestion(id);
     }
 
-    public Question saveQuesion(Question question) {
-        try{
-            return service.saveQuestion(question).execute().body();
-        }catch (IOException e){
-            return new Question("");
-        }
+    public Call<Question> saveQuesion(Question question) {
+        return service.saveQuestion(question);
     }
 
-    public void updateQuestion(Question question) {
-        Call<Question> call = service.updateQuestion(question.getKey(), question);
-        call.enqueue(new Callback<Question>() {
-            @Override
-            public void onResponse(Response<Question> response, Retrofit retrofit) {
-
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
+    public Call<Question> updateQuestion(Question question) {
+        return service.updateQuestion(question.getKey(), question);
     }
 
     public void deleteQuestion(Question question) {
         service.deleteQuestion(question.getKey());
     }
 
-    public List<Reply> getReplies(String questionKey) {
-        try{
-            return service.getReplyList(questionKey).execute().body();
-        }catch (IOException e){
-            return new ArrayList<>();
-        }
+    public Call<List<Reply>> getReplies(String questionKey) {
+        return service.getReplyList(questionKey);
     }
 
-    public Reply saveReply(Reply reply) {
-        try{
-            return service.saveReply(reply).execute().body();
-        }catch (IOException e){
-            return new Reply("");
-        }
+    public Call<Reply> saveReply(Reply reply) {
+        return service.saveReply(reply);
     }
 
-    public void updateReply(Reply reply) {
-        Call<Reply> call = service.updateReply(reply.getKey(), reply);
-        call.enqueue(new Callback<Reply>() {
-            @Override
-            public void onResponse(Response<Reply> response, Retrofit retrofitf) {
-
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
+    public Call<Reply> updateReply(Reply reply) {
+        return service.updateReply(reply.getKey(), reply);
     }
 
     public void deleteReply(Reply reply) {

@@ -30,7 +30,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/replyTime"
-                android:text="@{String.valueOf(reply.timestamp)}"
+                android:text="@{reply.timeDisplay}"
                 android:layout_marginBottom="5dp"
                 android:layout_marginRight="10dp"/>
         </LinearLayout>

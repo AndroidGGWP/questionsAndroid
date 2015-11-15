@@ -14,7 +14,11 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import hk.ust.cse.hunkim.questionroom.databinding.QuestionBinding;
@@ -26,48 +30,81 @@ import hk.ust.cse.hunkim.questionroom.question.Reply;
  * Created by Teman on 11/9/2015.
  */
 public class QuestionAdapter extends ArrayAdapter<Question> {
-    private RESTfulAPI mAPI = RESTfulAPI.getInstance();
-    private List<Question> mQuestionList;
     private LayoutInflater mInflater;
-    private Context mContext;
-    private String StartTime;
-    private String EndTime;
-    private String Content;
+    private MainActivity mParentActivity;
+    private Map<String, Question> mKeyQuestionMap;
+
+    private static Comparator<Question> questionComparator = new Comparator<Question>() {
+        @Override
+        public int compare(Question question, Question other) {
+            // Push new on top
+
+            if (question.isNewQuestion() != other.isNewQuestion()) {
+                return question.isNewQuestion() ? 1 : -1; // this is the winner
+            }
+            if (question.echo != other.echo){
+                return question.echo > other.echo? 1 : -1;
+            }
+            if (question.dislikes != other.dislikes){
+                return question.dislikes < other.dislikes? 1 : -1;
+            }
+            if (question.getTimestamp() != other.getTimestamp()){
+                return question.getTimestamp() > other.getTimestamp() ? 1 : -1;
+            }
+            return 0;
+            /*
+            if (this.echo == other.echo) {
+                if (other.timestamp == this.timestamp) {
+                    return 0;
+                }
+                return other.timestamp > this.timestamp ? -1 : 1;
+            }
+            return (this.echo - other.echo);*/
+        }
+    };
 
     public QuestionAdapter(Context context, List<Question> questions) {
         super(context, 0, questions);
+        mKeyQuestionMap = new HashMap<>();
+        for(Question q: questions) {
+            mKeyQuestionMap.put(q.getKey(), q);
+        }
+        setNotifyOnChange(true);
         mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mContext = context;
-        mQuestionList = questions;
-        StartTime="";
-        EndTime="";
-        Content="";
+        mParentActivity = (MainActivity)context;
     }
 
-    public QuestionAdapter(Context context, List<Question> questions, String startTime, String endTime, String content) {
-        super(context, 0, questions);
-        mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mContext = context;
-        mQuestionList = questions;
-        StartTime = startTime;
-        EndTime = endTime;
-        Content = content;
+    private static class ViewHolder {
+        public ImageButton echoButton;
+        public ImageButton dislikeButton;
+        public ImageButton replyButton;
+        public TextView hashView;
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         QuestionBinding binding;
-        if(convertView == null)
+        ViewHolder holder;
+        if(convertView == null) {
             binding = DataBindingUtil.inflate(mInflater, R.layout.question, parent, false);
-        else
+            convertView = binding.getRoot();
+            holder = new ViewHolder();
+            holder.echoButton = (ImageButton) convertView.findViewById(R.id.questionEchoButton);
+            holder.dislikeButton = (ImageButton) convertView.findViewById(R.id.questionDislikeButton);
+            holder.replyButton = (ImageButton) convertView.findViewById(R.id.questionReplyButton);
+            holder.hashView = (TextView) convertView.findViewById(R.id.head_desc);
+            convertView.setTag(holder);
+        }
+        else {
             binding = DataBindingUtil.getBinding(convertView);
+            convertView = binding.getRoot();
+            holder = (ViewHolder) convertView.getTag();
+        }
         final Question question = getItem(position);
         binding.setQuestion(question);
-        convertView = binding.getRoot();
 
         // Display question
         String msgString = "";
-        question.updateNewQuestion();
         if (question.isNewQuestion()) {
             msgString += "<font color=red>NEW </font>";
         }
@@ -75,31 +112,36 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
         ((TextView) convertView.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
 
         // Like button
-        ImageButton echoButton = (ImageButton) convertView.findViewById(R.id.questionEchoButton);
+        //ImageButton echoButton = (ImageButton) convertView.findViewById(R.id.questionEchoButton);
+        ImageButton echoButton = holder.echoButton;
         echoButton.setTag(question.getKey()); // Set tag for button
         echoButton.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        question.setEcho(question.getEcho() + 1);
+                        //question.setEcho(question.getEcho() + 1);
+                        mParentActivity.emitLikeQuestion(question.getKey());
                     }
                 }
         );
 
         // Dislike button
-        ImageButton dislikeButton = (ImageButton) convertView.findViewById(R.id.questionDislikeButton);
+        //ImageButton dislikeButton = (ImageButton) convertView.findViewById(R.id.questionDislikeButton);
+        ImageButton dislikeButton = holder.dislikeButton;
         dislikeButton.setTag(question.getKey()); // Set tag for button
         dislikeButton.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        question.setDislikes(question.getDislikes() + 1);
+                        //question.setDislikes(question.getDislikes() + 1);
+                        mParentActivity.emitDislikeQuestion(question.getKey());
                     }
                 }
         );
 
         // reply button
-        ImageButton replyButton = (ImageButton) convertView.findViewById(R.id.questionReplyButton);
+        //ImageButton replyButton = (ImageButton) convertView.findViewById(R.id.questionReplyButton);
+        ImageButton replyButton = holder.replyButton;
         replyButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -110,86 +152,57 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
         });
 
 
-        TextView hashView = (TextView) convertView.findViewById(R.id.head_desc);
-        SpannableString ss = new SpannableString(hashView.getText().toString());
+        //TextView hashView = (TextView) convertView.findViewById(R.id.head_desc);
+        TextView hashView = holder.hashView;
+        //SpannableString ss = new SpannableString(hashView.getText().toString());
         Pattern tagPattern = Pattern.compile("[#]+[A-Za-z0-9-_]+\\b");
         //Matcher tagMatcher = tagPattern.matcher(ss);
-
         String newActivityURL = "tag";
         Linkify.addLinks(hashView, tagPattern, newActivityURL);
 
         return convertView;
     }
 
-    public void addQuestion(Question question) {
-        mQuestionList.add(question);
+    public void setQuestionList(List<Question> questions) {
+        clear();
+        addAll(questions);
+        mKeyQuestionMap = new HashMap<>();
+        for(Question q: questions) {
+            mKeyQuestionMap.put(q.getKey(), q);
+        }
         notifyDataSetChanged();
-        mAPI.saveQuesion(question);
     }
 
-    private void enterReply(String questionKey) {
-        ((MainActivity)mContext).enterReply(questionKey);
+    public void addQuestion(Question question) {
+        mKeyQuestionMap.put(question.getKey(), question);
+        add(question);
     }
 
-    /*
-    // todo
-    @Override
-    protected void sortModels(List<Question> mModels) {
-        Collections.sort(mModels);
+    public void insertQuestion(Question question, int position) {
+        mKeyQuestionMap.put(question.getKey(), question);
+        insert(question, position);
     }
 
-    @Override
-    protected void setKey(String key, Question model) {
-        model.setKey(key);
-    }
-    */
-
-    private long GetTimeLimit(String Time) {
-        long currentTime= System.currentTimeMillis();
-        long returnTime=0;
-        if (Time.contains("Now")){
-            returnTime=currentTime;
-        } else if (Time.contains("1 hour ago")){
-            returnTime=currentTime-3600*1000;
-        } else if (Time.contains("2 hours ago")){
-            returnTime=currentTime-2*3600*1000;
-        } else if (Time.contains("1 day ago")){
-            returnTime=currentTime-24*3600*1000;
-        } else if (Time.contains("1 week ago")){
-            returnTime=currentTime-7*24*3600*1000;
-        } else if (Time.contains("30 days ago")){
-            returnTime=currentTime- 2592000000L;
-        } else if (Time.contains("365 days ago")){
-            returnTime=currentTime-31536000000L;
-        } else if (Time.contains("The Start")){
-            returnTime=0L;
-        }
-        return returnTime;
+    public void removeQuestion(String questionKey) {
+        Question question = mKeyQuestionMap.get(questionKey);
+        remove(question);
+        mKeyQuestionMap.remove(questionKey);
     }
 
-    public boolean search_valid(Question model){
-        String wholeMsg=model.getHead()+model.getDesc();
-        if (Content.equals("") || (wholeMsg+" ").contains(Content)) {
-            if (StartTime.equals("") && EndTime.equals("")){
-                return true;
-            } else {
-                if (StartTime.contains("All") || EndTime.contains("All")){
-                    return true;
-                }
-                long BeginTime = GetTimeLimit(StartTime);
-                long UntilTime = GetTimeLimit(EndTime);
-
-
-                long QuestionTime = model.getTimestamp();
-                if (QuestionTime <= UntilTime && QuestionTime >= BeginTime) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        } else {
-            return false;
-        }
+    public void likeQuestion(String questionKey, int numOfLikes, int order) {
+        Question question = mKeyQuestionMap.get(questionKey);
+        question.setEcho(numOfLikes);
+        question.setOrder(order);
     }
 
+    public void dislikeQuestion(String questionKey, int numOfDislikes, int order) {
+        Question question = mKeyQuestionMap.get(questionKey);
+        question.setDislikes(numOfDislikes);
+        question.setOrder(order);
+    }
+
+    public void sortQuestionList() {
+        sort(questionComparator);
+        notifyDataSetChanged();
+    }
 }

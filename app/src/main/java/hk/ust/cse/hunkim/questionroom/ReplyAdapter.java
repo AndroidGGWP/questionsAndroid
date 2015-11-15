@@ -19,18 +19,13 @@ import hk.ust.cse.hunkim.questionroom.question.Reply;
  * Created by Yuxuan on 10/30/2015.
  */
 public class ReplyAdapter extends ArrayAdapter<Reply> {
-    private List<Reply> mReplies;
     private ReplyBinding mBinding;
     private LayoutInflater mInflater;
-    public void addReply(Reply reply) {
-        mReplies.add(reply);
-        notifyDataSetChanged();
-    }
 
     ReplyAdapter(Context context, List<Reply> replies){
         super(context, R.layout.reply,replies);
         mInflater = LayoutInflater.from(context);
-        this.mReplies = replies;
+        setNotifyOnChange(true);
     }
 
     public View getView(int position, View convertView, ViewGroup parent){
@@ -57,5 +52,11 @@ public class ReplyAdapter extends ArrayAdapter<Reply> {
         replyTimeView.setText(replyTime);
         return replyView;
         */
+    }
+
+    public void setReplyList(List<Reply> replies) {
+        clear();
+        addAll(replies);
+        notifyDataSetChanged();
     }
 }

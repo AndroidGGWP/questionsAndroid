@@ -17,36 +17,11 @@ import java.util.Date;
 
 
 public class SearchActivity extends AppCompatActivity {
-    public static final String ROOM_NAME = "Room_name";
-    private Spinner Time_spinner;
     private Button btnSubmit;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getIntent().getExtras().getString("hash") != null)
-        {
-            System.out.println(getIntent().getExtras().getString("hash") );
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-            String Time1 = dateFormat.format(new Date(System.currentTimeMillis()));
-            Toast.makeText(SearchActivity.this,
-                    "OnClickListener : " +
-                            "\nStart Time : " + "The Start" +
-                            "\nEnd Time : " + "Now" +
-                            "\nSearch Content : " + getIntent().getExtras().getString("hash") +
-                            "\nCurrent Time is :" + Time1,
-                    Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent();
-            intent.putExtra("StartTime", "All");
-            intent.putExtra("EndTime", "All");
-            intent.putExtra("Content",getIntent().getExtras().getString("hash") );
-            SearchActivity.this.setResult(RESULT_OK, intent);
-            SearchActivity.this.finish();
-        }
         setContentView(R.layout.activity_search);
-        doInitialization();
-    }
-
-    public void doInitialization(){
         Spinner StartTime_spinner = (Spinner) findViewById(R.id.StartTime_spinner);
         Spinner EndTime_spinner = (Spinner)  findViewById(R.id.EndTime_spinner);
         StartTime_spinner.setOnItemSelectedListener(new CustomOnItemSelectedListener());
@@ -69,10 +44,6 @@ public class SearchActivity extends AppCompatActivity {
 
     }
 
-//    public void addListenerOnSpinnerItemSelection() {
-//        Spinner spinner1 = (Spinner) findViewById(R.id.Time_spinner);
-//        spinner1.setOnItemSelectedListener(new CustomOnItemSelectedListener());
-//    }
 public void addListenerOnButton() {
 
     final Spinner StartTime_spinner = (Spinner) findViewById(R.id.StartTime_spinner);

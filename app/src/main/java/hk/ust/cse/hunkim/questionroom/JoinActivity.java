@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
 
-import hk.ust.cse.hunkim.questionroom.question.Question;
 
 
 /**

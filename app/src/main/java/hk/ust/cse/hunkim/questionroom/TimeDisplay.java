@@ -7,7 +7,7 @@ import java.util.Date;
  */
 public class TimeDisplay {
     private String outputTime;
-    TimeDisplay(long inputTime){
+    public TimeDisplay(long inputTime){
         long currentTime = new Date().getTime();
         long difference = currentTime - inputTime;
         difference = difference/1000;
@@ -27,7 +27,7 @@ public class TimeDisplay {
             outputTime = ((int)(difference/60/60/24)) + " day" + (difference/60/60/24 > 1 ? "s": "") + " ago";
         }
     }
-    String getOutputTime(){
+    public String getOutputTime(){
         return outputTime;
     }
 }
