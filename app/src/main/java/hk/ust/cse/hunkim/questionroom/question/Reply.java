@@ -49,8 +49,7 @@ public class Reply extends BaseObservable {
 
     @Bindable
     public String getTimeDisplay() {
-        TimeDisplay timeDisplay = new TimeDisplay(timestamp);
-        return timeDisplay.getOutputTime();
+        return TimeDisplay.fromTimestamp(timestamp);
     }
 
     public void setKey(String key) {

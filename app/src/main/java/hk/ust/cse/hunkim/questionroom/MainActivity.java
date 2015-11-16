@@ -164,11 +164,20 @@ public class MainActivity extends ListActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Gson gson = new Gson();
-                        Question question = gson.fromJson(args[0].toString(), Question.class);
-                        mQuestionAdapter.insertQuestion(question, 0);
-                        //mQuestionAdapter.addQuestion(question);
-                        //mQuestionAdapter.sortQuestionList();
+                        String questionKey = args[0].toString();
+                        mAPI.getQuestion(questionKey).enqueue(new Callback<Question>() {
+                            @Override
+                            public void onResponse(Response<Question> response, Retrofit retrofit) {
+                                Question question = response.body();
+                                if(question != null)
+                                    mQuestionAdapter.insertQuestion(question, 0);
+                            }
+
+                            @Override
+                            public void onFailure(Throwable t) {
+
+                            }
+                        });
                     }
                 });
             }
@@ -178,7 +187,7 @@ public class MainActivity extends ListActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        String key = (String) args[0];
+                        String key = args[0].toString();
                         mQuestionAdapter.removeQuestion(key);
                     }
                 });
@@ -242,8 +251,13 @@ public class MainActivity extends ListActivity {
                 public void onResponse(Response<Question> response, Retrofit retrofit) {
                     Question question = response.body();
                     if(question != null) {
-                        mSocket.emit("new post", question.getKey());
-                        //mQuestionAdapter.insertQuestion(question, 0);
+                        JSONObject jsonObject = new JSONObject();
+                        try {
+                            jsonObject.put("id", question.getKey());
+                            jsonObject.put("room", mRoomName);
+                        } catch (JSONException e) {}
+                        mSocket.emit("new post", jsonObject);
+                        mQuestionAdapter.insertQuestion(question, 0);
                     }
                     else {
                         Log.e("Empty Response Body", "Null Question");
@@ -270,28 +284,6 @@ public class MainActivity extends ListActivity {
         finish();
     }
 
-    private String toTimestamp(String Time) {
-        long currentTime= System.currentTimeMillis();
-        long returnTime=0;
-        if (Time.contains("Now")){
-            returnTime=currentTime;
-        } else if (Time.contains("1 hour ago")){
-            returnTime=currentTime-3600*1000;
-        } else if (Time.contains("2 hours ago")){
-            returnTime=currentTime-2*3600*1000;
-        } else if (Time.contains("1 day ago")){
-            returnTime=currentTime-24*3600*1000;
-        } else if (Time.contains("1 week ago")){
-            returnTime=currentTime-7*24*3600*1000;
-        } else if (Time.contains("30 days ago")){
-            returnTime=currentTime- 2592000000L;
-        } else if (Time.contains("365 days ago")){
-            returnTime=currentTime-31536000000L;
-        } else if (Time.contains("The Start")){
-            returnTime=0L;
-        }
-        return String.valueOf(returnTime);
-    }
 
     public void Search(View view) {
         Intent intent = new Intent(this, SearchActivity.class);
@@ -302,13 +294,13 @@ public class MainActivity extends ListActivity {
     @Override
     protected void onActivityResult(final int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
-            String startTime = toTimestamp(data.getExtras().getString("StartTime"));
-            String endTime = toTimestamp(data.getExtras().getString("EndTime"));
+            long startTime = TimeDisplay.toTimestamp(data.getExtras().getString("StartTime"));
+            long endTime = TimeDisplay.toTimestamp(data.getExtras().getString("EndTime"));
             String content = data.getExtras().getString("Content");
             final Map<String, String> query = new HashMap<>();
             query.put("roomName", mRoomName);
-            query.put("startTime", startTime);
-            query.put("endTime", endTime);
+            query.put("startTime", String.valueOf(startTime));
+            query.put("endTime", String.valueOf(endTime));
             query.put("content", content);
             mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
                 @Override

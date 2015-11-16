@@ -47,28 +47,11 @@ public class ReplyActivity extends Activity {
                 Question question = response.body();
                 if(question != null) {
                     mBinding.setQuestion(question);
+                    mReplyAdapter.setReplyList(question.getReplies());
                 }
                 else {
                     Log.e("Empty Response Body", "Null Question");
                     mBinding.setQuestion(new Question("", "all"));
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
-
-        mAPI.getReplies(mQuestionKey).enqueue(new Callback<List<Reply>>() {
-            @Override
-            public void onResponse(Response<List<Reply>> response, Retrofit retrofit) {
-                List<Reply> replies = response.body();
-                if(replies != null) {
-                    mReplyAdapter.setReplyList(replies);
-                }
-                else {
-                    Log.e("Empty Response Body", "Null Reply List");
                 }
             }
 

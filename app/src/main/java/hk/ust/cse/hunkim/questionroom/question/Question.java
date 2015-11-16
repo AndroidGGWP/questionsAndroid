@@ -2,6 +2,7 @@ package hk.ust.cse.hunkim.questionroom.question;
 
 import android.databinding.BaseObservable;
 import android.databinding.Bindable;
+import android.util.Log;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -39,7 +40,7 @@ public class Question extends BaseObservable {
 
     private int order;
 
-    private int numOfReplies;
+    @SerializedName("reply")
     private List<Reply> replies;
 
 
@@ -62,7 +63,6 @@ public class Question extends BaseObservable {
         this.headLastChar = head.substring(head.length() - 1);
         this.timestamp = new Date().getTime();
         this.replies = new ArrayList<Reply>();
-        this.numOfReplies = 0;
     }
 
     public Question(String message) {
@@ -79,7 +79,6 @@ public class Question extends BaseObservable {
         this.headLastChar = head.substring(head.length() - 1);
 
         this.timestamp = new Date().getTime();
-        this.numOfReplies = 0;
         this.replies = new ArrayList<Reply>();
         this.replies.add(new Reply(""));
     }
@@ -169,9 +168,12 @@ public class Question extends BaseObservable {
         return order;
     }
 
-    @Bindable
-    public int getNumOfReplies() { return numOfReplies; }
-
+    public int getNumOfReplies() {
+        if(replies == null) {
+            return 0;
+        }
+        return  replies.size();
+    }
     public List<Reply> getReplies() { return replies; }
 
 

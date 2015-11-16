@@ -6,6 +6,7 @@ import android.databinding.DataBindingUtil;
 import android.text.Html;
 import android.text.SpannableString;
 import android.text.util.Linkify;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -104,11 +105,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
         binding.setQuestion(question);
 
         // Display question
-        String msgString = "";
-        if (question.isNewQuestion()) {
-            msgString += "<font color=red>NEW </font>";
-        }
-        msgString += "<B>" + question.getHead() + "</B>" + question.getDesc();
+        String msgString = question.getMsgString();
         ((TextView) convertView.findViewById(R.id.head_desc)).setText(Html.fromHtml(msgString));
 
         // Like button
@@ -146,8 +143,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
             @Override
             public void onClick(View view) {
                 //enterReply(question.getKey());
-                MainActivity m = (MainActivity) view.getContext();
-                m.enterReply(question.getKey());
+                mParentActivity.enterReply(question.getKey());
             }
         });
 
@@ -173,6 +169,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
         notifyDataSetChanged();
     }
 
+    // add question to the end of question list
     public void addQuestion(Question question) {
         mKeyQuestionMap.put(question.getKey(), question);
         add(question);
@@ -191,14 +188,20 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
 
     public void likeQuestion(String questionKey, int numOfLikes, int order) {
         Question question = mKeyQuestionMap.get(questionKey);
-        question.setEcho(numOfLikes);
-        question.setOrder(order);
+        if(question != null) {
+            question.setEcho(numOfLikes);
+            question.setOrder(order);
+            //sortQuestionList();
+        }
     }
 
     public void dislikeQuestion(String questionKey, int numOfDislikes, int order) {
         Question question = mKeyQuestionMap.get(questionKey);
-        question.setDislikes(numOfDislikes);
-        question.setOrder(order);
+        if(question != null) {
+            question.setDislikes(numOfDislikes);
+            question.setOrder(order);
+            //sortQuestionList();
+        }
     }
 
     public void sortQuestionList() {
