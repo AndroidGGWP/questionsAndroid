@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -18,7 +19,6 @@ import android.widget.TextView;
 
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -74,7 +74,7 @@ public class MainActivity extends ListActivity {
         ListView listView = getListView();
         listView.setAdapter(mQuestionAdapter);
 
-        Map<String, String> query = new HashMap<>();
+        Map<String, String> query = new ArrayMap<>();
         query.put("roomName", mRoomName);
         mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
             @Override
@@ -121,7 +121,7 @@ public class MainActivity extends ListActivity {
         // Setup our view and list adapter. Ensure it scrolls to the bottom as data changes
         final ListView listView = getListView();
         // Tell our list adapter that we only want 200 messages at a time
-        Map<String, String> query = new HashMap<>();
+        Map<String, String> query = new ArrayMap<>();
         query.put("sortBy", "order");
         query.put("limit", "200");
         mQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.getQuestionList(query));
@@ -131,7 +131,7 @@ public class MainActivity extends ListActivity {
     */
 
     public void Reset_Search(View view) {
-        Map<String, String> query = new HashMap<>();
+        Map<String, String> query = new ArrayMap<>();
         query.put("roomName", mRoomName);
         mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
             @Override
@@ -297,7 +297,7 @@ public class MainActivity extends ListActivity {
             long startTime = TimeDisplay.toTimestamp(data.getExtras().getString("StartTime"));
             long endTime = TimeDisplay.toTimestamp(data.getExtras().getString("EndTime"));
             String content = data.getExtras().getString("Content");
-            final Map<String, String> query = new HashMap<>();
+            final Map<String, String> query = new ArrayMap<>();
             query.put("roomName", mRoomName);
             query.put("startTime", String.valueOf(startTime));
             query.put("endTime", String.valueOf(endTime));
@@ -329,7 +329,7 @@ public class MainActivity extends ListActivity {
             //strip off hashtag from the URI
             String tag=uri.toString();
             //System.out.println(tag.substring(3));
-            Map<String, String> query = new HashMap<>();
+            Map<String, String> query = new ArrayMap<>();
             query.put("roomName", mRoomName);
             query.put("content", tag.substring(3));
             mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {

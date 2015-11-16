@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
     <data>
+        <import type="hk.ust.cse.hunkim.questionroom.TimeDisplay" />
         <variable name="reply" type="hk.ust.cse.hunkim.questionroom.question.Reply"/>
     </data>
     <LinearLayout
@@ -30,7 +31,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/replyTime"
-                android:text="@{reply.timeDisplay}"
+                android:text="@{TimeDisplay.fromTimestamp(reply.timestamp)}"
                 android:layout_marginBottom="5dp"
                 android:layout_marginRight="10dp"/>
         </LinearLayout>

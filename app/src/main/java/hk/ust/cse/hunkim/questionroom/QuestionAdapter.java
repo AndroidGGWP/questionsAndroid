@@ -6,6 +6,7 @@ import android.databinding.DataBindingUtil;
 import android.text.Html;
 import android.text.SpannableString;
 import android.text.util.Linkify;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,7 +17,6 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,7 +66,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
 
     public QuestionAdapter(Context context, List<Question> questions) {
         super(context, 0, questions);
-        mKeyQuestionMap = new HashMap<>();
+        mKeyQuestionMap = new ArrayMap<>();
         for(Question q: questions) {
             mKeyQuestionMap.put(q.getKey(), q);
         }
@@ -162,7 +162,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
     public void setQuestionList(List<Question> questions) {
         clear();
         addAll(questions);
-        mKeyQuestionMap = new HashMap<>();
+        mKeyQuestionMap = new ArrayMap<>();
         for(Question q: questions) {
             mKeyQuestionMap.put(q.getKey(), q);
         }

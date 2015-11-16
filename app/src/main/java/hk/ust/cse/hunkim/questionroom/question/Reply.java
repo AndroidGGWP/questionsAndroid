@@ -47,11 +47,6 @@ public class Reply extends BaseObservable {
     public String getContent() { return content; }
     public Long getTimestamp() { return timestamp; }
 
-    @Bindable
-    public String getTimeDisplay() {
-        return TimeDisplay.fromTimestamp(timestamp);
-    }
-
     public void setKey(String key) {
         this.key = key;
     }

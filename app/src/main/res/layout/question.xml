@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
     <data>
+        <import type="hk.ust.cse.hunkim.questionroom.TimeDisplay" />
         <variable name="question" type="hk.ust.cse.hunkim.questionroom.question.Question"/>
     </data>
     <LinearLayout
@@ -32,6 +33,7 @@
             <TextView
                 android:layout_centerVertical="true"
                 android:id="@+id/questionTimestamp"
+                android:text="@{TimeDisplay.fromTimestamp(question.timestamp)}"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dp"/>
