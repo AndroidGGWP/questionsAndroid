@@ -136,7 +136,13 @@ public class Question extends BaseObservable {
         if (isNewQuestion()) {
             msgString += "<font color=red>NEW </font>";
         }
-        msgString += "<B>" + head + "</B>" + desc;
+        String newHead = getHead();
+        String newDesc = getDesc();
+        newHead = newHead.replace("<", "&lt;");
+        newHead = newHead.replace(">", "&gt;");
+        newDesc = newDesc.replace("<", "&lt;");
+        newDesc = newDesc.replace(">", "&gt;");
+        msgString += "<B>" + newHead + "</B>" + newDesc;
         return msgString;
     }
 
