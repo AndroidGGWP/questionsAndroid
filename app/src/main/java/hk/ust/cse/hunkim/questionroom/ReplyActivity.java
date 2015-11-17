@@ -51,7 +51,8 @@ public class ReplyActivity extends Activity {
                 }
                 else {
                     Log.e("Empty Response Body", "Null Question");
-                    mBinding.setQuestion(new Question("", "all"));
+                    //mBinding.setQuestion(new Question("", "all"));
+                    mBinding.setQuestion(new Question("", "all",  "Anonymous", false));
                 }
             }
 
@@ -70,7 +71,8 @@ public class ReplyActivity extends Activity {
                     public void onClick(View view) {
                         String replyContent = replyText.getText().toString();
                         ReplyActivity r = (ReplyActivity) view.getContext();
-                        Reply reply = new Reply(replyContent, mQuestionKey);
+                        //Reply reply = new Reply(replyContent, mQuestionKey);
+                        Reply reply = new Reply(replyContent, mQuestionKey, "Anonymous", false);
                         r.sendReply(reply);
                         replyText.setText("");
                     }

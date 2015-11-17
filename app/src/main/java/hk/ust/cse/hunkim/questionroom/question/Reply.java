@@ -23,19 +23,27 @@ public class Reply extends BaseObservable {
     @SerializedName("wholeMsg")
     private String content;
 
+    private String username;
+    @SerializedName("anonymous")
+    private boolean isAnonymous;
+
     @SerializedName("postId")
     private String questionKey;
     private Long timestamp;
 
-    public Reply (String content, String questionKey){
+    public Reply (String content, String questionKey, String username, boolean isAnonymous){
         this.content = content;
         this.timestamp = new Date().getTime();
         this.questionKey = questionKey;
+        this.username = username;
+        this.isAnonymous = isAnonymous;
     }
 
     public Reply (String content){
         this.content = content;
         this.timestamp = new Date().getTime();
+        this.username = "Anonymous";
+        this.isAnonymous = false;
     }
 
     // Required default constructor for Firebase object mapping

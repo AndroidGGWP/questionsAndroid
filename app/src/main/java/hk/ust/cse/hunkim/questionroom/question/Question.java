@@ -25,6 +25,10 @@ public class Question extends BaseObservable {
     private String key;
 
     private String roomName;
+    private String username;
+    @SerializedName("anonymous")
+    private boolean isAnonymous;
+    private String image;
     private String wholeMsg;
     private String head;
     private String headLastChar;
@@ -48,7 +52,7 @@ public class Question extends BaseObservable {
      * Set question from a String message
      * @param message string message
      */
-    public Question(String message, String roomName) {
+    public Question(String message, String roomName, String username, boolean isAnonymous) {
         this.wholeMsg = message;
         this.echo = 0;
         this.dislikes = 0;
@@ -63,6 +67,8 @@ public class Question extends BaseObservable {
         this.headLastChar = head.substring(head.length() - 1);
         this.timestamp = new Date().getTime();
         this.replies = new ArrayList<Reply>();
+        this.username = username;
+        this.isAnonymous = isAnonymous;
     }
 
     public Question(String message) {
@@ -81,6 +87,8 @@ public class Question extends BaseObservable {
         this.timestamp = new Date().getTime();
         this.replies = new ArrayList<Reply>();
         this.replies.add(new Reply(""));
+        this.username = "Anonymous";
+        this.isAnonymous = false;
     }
 
     /**

@@ -19,6 +19,7 @@ import android.widget.TextView;
 
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -131,8 +132,12 @@ public class MainActivity extends ListActivity {
     */
 
     public void Reset_Search(View view) {
-        Map<String, String> query = new ArrayMap<>();
+        Map<String, String> query = new LinkedHashMap<>(); // use LinkedHashMap because the insertion order of sortBy and order should be maintained
         query.put("roomName", mRoomName);
+        query.put("sortBy", "echo");
+        query.put("order", "-1"); // -1 for descending order
+        query.put("sortBy", "hate");
+        query.put("order", "1"); // 1 for ascending order
         mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
             @Override
             public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
@@ -195,30 +200,40 @@ public class MainActivity extends ListActivity {
         }).on("like post", new Emitter.Listener() {
             @Override
             public void call(final Object... args) {
-                JSONObject data = (JSONObject) args[0];
-                try {
-                    String key = data.getString("id");
-                    int numOfLikes = data.getInt("like");
-                    int order = data.getInt("order");
-                    mQuestionAdapter.likeQuestion(key, numOfLikes, order);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    return;
-                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject data = (JSONObject) args[0];
+                        try {
+                            String key = data.getString("id");
+                            int numOfLikes = data.getInt("like");
+                            int order = data.getInt("order");
+                            mQuestionAdapter.likeQuestion(key, numOfLikes, order);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+                    }
+                });
             }
         }).on("dislike post", new Emitter.Listener() {
             @Override
-            public void call(Object... args) {
-                JSONObject data = (JSONObject) args[0];
-                try {
-                    String key = data.getString("id");
-                    int numOfDislikes = data.getInt("dislike");
-                    int order = data.getInt("order");
-                    mQuestionAdapter.dislikeQuestion(key, numOfDislikes, order);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    return;
-                }
+            public void call(final Object... args) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject data = (JSONObject) args[0];
+                        try {
+                            String key = data.getString("id");
+                            int numOfDislikes = data.getInt("dislike");
+                            int order = data.getInt("order");
+                            mQuestionAdapter.dislikeQuestion(key, numOfDislikes, order);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+                    }
+                });
             }
         });
         mSocket.connect();
@@ -244,7 +259,8 @@ public class MainActivity extends ListActivity {
         String input = inputText.getText().toString();
         if (!input.equals("")) {
             // Create our 'model', a Chat object
-            Question question = new Question(input, mRoomName);
+            //Question question = new Question(input, mRoomName);
+            Question question = new Question(input, mRoomName, "Anonymous", false); // change Anonymous to the name of logged in user
             // Create a new, auto-generated child of that chat location, and save our chat data there
             mAPI.saveQuesion(question).enqueue(new Callback<Question>() {
                 @Override

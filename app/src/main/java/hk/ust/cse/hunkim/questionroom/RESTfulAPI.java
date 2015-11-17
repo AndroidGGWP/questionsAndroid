@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import hk.ust.cse.hunkim.questionroom.question.ResponseResult;
 import retrofit.Call;
 import retrofit.Callback;
 import retrofit.GsonConverterFactory;
@@ -53,6 +54,10 @@ public class RESTfulAPI {
         return instance;
     }
 
+    public APIService getService() {
+        return service;
+    }
+
     public Call<List<Question>> getQuestionList(Map<String, String> query) {
         return service.getQuestionList(query);
     }
@@ -73,28 +78,28 @@ public class RESTfulAPI {
         return service.saveQuestion(question);
     }
 
-    public Call<Question> updateQuestion(Question question) {
-        return service.updateQuestion(question.getKey(), question);
+    public Call<Question> updateQuestion(Question question, String username) {
+        return service.updateQuestion(question.getKey(), question, username);
     }
 
-    public void deleteQuestion(Question question) {
-        service.deleteQuestion(question.getKey());
+    public Call<ResponseResult> deleteQuestion(Question question, String username) {
+        return service.deleteQuestion(question.getKey(), username);
     }
 
-    public Call<List<Reply>> getReplies(String questionKey) {
-        return service.getReplyList(questionKey);
+    public Call<List<Reply>> getReplies(Map<String, String> query) {
+        return service.getReplyList(query);
     }
 
     public Call<Reply> saveReply(Reply reply) {
         return service.saveReply(reply);
     }
 
-    public Call<Reply> updateReply(Reply reply) {
-        return service.updateReply(reply.getKey(), reply);
+    public Call<Reply> updateReply(Reply reply, String username) {
+        return service.updateReply(reply.getKey(), reply, username);
     }
 
-    public void deleteReply(Reply reply) {
-        service.deleteReply(reply.getKey());
+    public Call<ResponseResult> deleteReply(Reply reply, String username) {
+        return service.deleteReply(reply.getKey(), username);
     }
 
 }

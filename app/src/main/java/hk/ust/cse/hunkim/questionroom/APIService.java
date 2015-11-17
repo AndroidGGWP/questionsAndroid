@@ -5,6 +5,8 @@ import java.util.Map;
 
 import hk.ust.cse.hunkim.questionroom.question.Question;
 import hk.ust.cse.hunkim.questionroom.question.Reply;
+import hk.ust.cse.hunkim.questionroom.question.ResponseResult;
+import hk.ust.cse.hunkim.questionroom.question.User;
 import retrofit.Call;
 import retrofit.http.Body;
 import retrofit.http.DELETE;
@@ -29,13 +31,13 @@ public interface APIService {
     Call<Question> getQuestion(@Path("id") String id);
 
     @PUT("posts/{id}")
-    Call<Question> updateQuestion(@Path("id") String id, @Body Question question);
+    Call<Question> updateQuestion(@Path("id") String id, @Body Question question, @Query("username") String currentUsername);
 
     @DELETE("posts/{id}")
-    void deleteQuestion(@Path("id") String id);
+    Call<ResponseResult> deleteQuestion(@Path("id") String id, @Query("username") String currentUsername);
 
     @GET("replies")
-    Call<List<Reply>> getReplyList(@Query("postId") String postId);
+    Call<List<Reply>> getReplyList(@QueryMap Map<String, String> query);
 
     @POST("replies")
     Call<Reply> saveReply(@Body Reply reply);
@@ -44,9 +46,12 @@ public interface APIService {
     Call<Reply> getReply(@Path("id") String id);
 
     @PUT("replies/{id}")
-    Call<Reply> updateReply(@Path("id") String id, @Body Reply reply);
+    Call<Reply> updateReply(@Path("id") String id, @Body Reply reply, @Query("username") String currentUsername);
 
     @DELETE("replies/{id}")
-    void deleteReply(@Path("id") String id);
+    Call<ResponseResult> deleteReply(@Path("id") String id, @Query("username") String currentUsername);
+
+    @POST("users")
+    Call<ResponseResult> userAuth(@Body User user, @Query("option") String option);
 }
 

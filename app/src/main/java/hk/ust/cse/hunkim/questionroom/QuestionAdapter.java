@@ -191,7 +191,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
         if(question != null) {
             question.setEcho(numOfLikes);
             question.setOrder(order);
-            //sortQuestionList();
+            sortQuestionList();
         }
     }
 
@@ -200,7 +200,7 @@ public class QuestionAdapter extends ArrayAdapter<Question> {
         if(question != null) {
             question.setDislikes(numOfDislikes);
             question.setOrder(order);
-            //sortQuestionList();
+            sortQuestionList();
         }
     }
 
