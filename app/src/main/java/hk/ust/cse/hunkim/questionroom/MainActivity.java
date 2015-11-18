@@ -3,10 +3,10 @@ package hk.ust.cse.hunkim.questionroom;
 
 import android.app.ListActivity;
 import android.content.Intent;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -16,34 +16,36 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-
-import com.firebase.client.ValueEventListener;
 
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import hk.ust.cse.hunkim.questionroom.db.DBHelper;
 import hk.ust.cse.hunkim.questionroom.db.DBUtil;
 import hk.ust.cse.hunkim.questionroom.question.Question;
+import retrofit.Callback;
+import retrofit.Response;
+import retrofit.Retrofit;
+
+import com.github.nkzawa.emitter.Emitter;
+import com.github.nkzawa.socketio.client.IO;
+import com.github.nkzawa.socketio.client.Socket;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MainActivity extends ListActivity {
 
-    // TODO: change this to your own Firebase URL
-    private static final String FIREBASE_URL = "https://fiery-heat-97.firebaseio.com/";
-
-    private String roomName;
-    private Firebase mFirebaseRef;
-    private ValueEventListener mConnectedListener;
-    private QuestionListAdapter mChatListAdapter;
-    private String StartTime;
-    private String EndTime;
-    private String Content;
-
+    private String mRoomName;
+    private QuestionAdapter mQuestionAdapter;
+    private RESTfulAPI mAPI;
     private DBUtil dbutil;
+    private Socket mSocket;
 
     public DBUtil getDbutil() {
         return dbutil;
@@ -52,26 +54,45 @@ public class MainActivity extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //initialized once with an Android context.
-        Firebase.setAndroidContext(this);
-        StartTime = "";
-        EndTime = "";
-        Content = "";
         setContentView(R.layout.activity_main);
 
+
+        dbutil = new DBUtil(new DBHelper(this));
         Intent intent = getIntent();
         assert (intent != null);
 
         // Make it a bit more reliable
-        roomName = intent.getStringExtra(JoinActivity.ROOM_NAME);
-        if (roomName == null || roomName.length() == 0) {
-            roomName = "all";
+        mRoomName = intent.getStringExtra(JoinActivity.ROOM_NAME);
+        if (mRoomName == null || mRoomName.length() == 0) {
+            mRoomName = "all";
         }
 
-        setTitle("Room name: " + roomName);
+        mQuestionAdapter = new QuestionAdapter(this, new ArrayList<Question>());
+        mAPI = RESTfulAPI.getInstance();
+        createSocketEventListener();
+        setTitle("Room name: " + mRoomName);
 
-        // Setup our Firebase mFirebaseRef
-        mFirebaseRef = new Firebase(FIREBASE_URL).child(roomName).child("questions");
+        ListView listView = getListView();
+        listView.setAdapter(mQuestionAdapter);
+
+        Map<String, String> query = new ArrayMap<>();
+        query.put("roomName", mRoomName);
+        mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
+            @Override
+            public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
+                List<Question> questions = response.body();
+                if (questions != null) {
+                    mQuestionAdapter.setQuestionList(questions);
+                } else {
+                    Log.e("Empty response body", "Null question list");
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        });
 
         // Setup our input methods. Enter key on the keyboard or pushing the send button
         EditText inputText = (EditText) findViewById(R.id.messageInput);
@@ -91,12 +112,9 @@ public class MainActivity extends ListActivity {
                 sendMessage();
             }
         });
-
-        // get the DB Helper
-        DBHelper mDbHelper = new DBHelper(this);
-        dbutil = new DBUtil(mDbHelper);
     }
 
+    /*
     @Override
     public void onStart() {
         super.onStart();
@@ -104,55 +122,136 @@ public class MainActivity extends ListActivity {
         // Setup our view and list adapter. Ensure it scrolls to the bottom as data changes
         final ListView listView = getListView();
         // Tell our list adapter that we only want 200 messages at a time
-        mChatListAdapter = new QuestionListAdapter(
-                mFirebaseRef.orderByChild("order").limitToFirst(200),
-                this, R.layout.question, roomName);
-        listView.setAdapter(mChatListAdapter);
+        Map<String, String> query = new ArrayMap<>();
+        query.put("sortBy", "order");
+        query.put("limit", "200");
+        mQuestionAdapter = new QuestionAdapter(getBaseContext(), mAPI.getQuestionList(query));
+        listView.setAdapter(mQuestionAdapter);
+        mQuestionAdapter.notifyDataSetChanged(); // ??? needed ???
+    }
+    */
 
-        mChatListAdapter.registerDataSetObserver(new DataSetObserver() {
+    public void Reset_Search(View view) {
+        Map<String, String> query = new LinkedHashMap<>(); // use LinkedHashMap because the insertion order of sortBy and order should be maintained
+        query.put("roomName", mRoomName);
+        query.put("sortBy", "echo");
+        query.put("order", "-1"); // -1 for descending order
+        query.put("sortBy", "hate");
+        query.put("order", "1"); // 1 for ascending order
+        mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
             @Override
-            public void onChanged() {
-                super.onChanged();
-                listView.setSelection(mChatListAdapter.getCount() - 1);
-            }
-        });
-
-        // Finally, a little indication of connection status
-        mConnectedListener = mFirebaseRef.getRoot().child(".info/connected").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                boolean connected = (Boolean) dataSnapshot.getValue();
-                if (connected) {
-                    Toast.makeText(MainActivity.this, "Connected to Firebase", Toast.LENGTH_SHORT).show();
+            public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
+                List<Question> questions = response.body();
+                if (questions != null) {
+                    mQuestionAdapter.setQuestionList(questions);
                 } else {
-                    Toast.makeText(MainActivity.this, "Disconnected from Firebase", Toast.LENGTH_SHORT).show();
+                    Log.e("Empty Response Body", "Null question list");
                 }
             }
 
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
-                // No-op
+            public void onFailure(Throwable t) {
+
             }
         });
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        ListView listView = getListView();
-        QuestionListAdapter temChatListAdapter = new QuestionListAdapter(
-                mFirebaseRef.orderByChild("echo").limitToFirst(200),
-                this, R.layout.question, roomName, StartTime, EndTime, Content);
-        listView.setAdapter(temChatListAdapter);
-        temChatListAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        mFirebaseRef.getRoot().child(".info/connected").removeEventListener(mConnectedListener);
-        mChatListAdapter.cleanup();
+    }
+
+    private void createSocketEventListener() {
+        mSocket = mAPI.getSocket();
+        mSocket.on("new post", new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String questionKey = args[0].toString();
+                        mAPI.getQuestion(questionKey).enqueue(new Callback<Question>() {
+                            @Override
+                            public void onResponse(Response<Question> response, Retrofit retrofit) {
+                                Question question = response.body();
+                                if(question != null)
+                                    mQuestionAdapter.insertQuestion(question, 0);
+                            }
+
+                            @Override
+                            public void onFailure(Throwable t) {
+
+                            }
+                        });
+                    }
+                });
+            }
+        }).on("del post", new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String key = args[0].toString();
+                        mQuestionAdapter.removeQuestion(key);
+                    }
+                });
+            }
+        }).on("like post", new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject data = (JSONObject) args[0];
+                        try {
+                            String key = data.getString("id");
+                            int numOfLikes = data.getInt("like");
+                            int order = data.getInt("order");
+                            mQuestionAdapter.likeQuestion(key, numOfLikes, order);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+                    }
+                });
+            }
+        }).on("dislike post", new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject data = (JSONObject) args[0];
+                        try {
+                            String key = data.getString("id");
+                            int numOfDislikes = data.getInt("dislike");
+                            int order = data.getInt("order");
+                            mQuestionAdapter.dislikeQuestion(key, numOfDislikes, order);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+                    }
+                });
+            }
+        });
+        mSocket.connect();
+        mSocket.emit("join", mRoomName);
+    }
+
+    public void emitLikeQuestion(String questionKey) {
+        if(dbutil.contains(questionKey))
+            return;
+        mSocket.emit("like post", questionKey);
+        dbutil.put(questionKey);
+    }
+
+    public void emitDislikeQuestion(String questionKey) {
+        if(dbutil.contains(questionKey))
+            return;
+        mSocket.emit("dislike post", questionKey);
+        dbutil.put(questionKey);
     }
 
     private void sendMessage() {
@@ -160,112 +259,40 @@ public class MainActivity extends ListActivity {
         String input = inputText.getText().toString();
         if (!input.equals("")) {
             // Create our 'model', a Chat object
-            Question question = new Question(input);
+            //Question question = new Question(input, mRoomName);
+            Question question = new Question(input, mRoomName, "Anonymous", false); // change Anonymous to the name of logged in user
             // Create a new, auto-generated child of that chat location, and save our chat data there
-            mFirebaseRef.push().setValue(question);
+            mAPI.saveQuesion(question).enqueue(new Callback<Question>() {
+                @Override
+                public void onResponse(Response<Question> response, Retrofit retrofit) {
+                    Question question = response.body();
+                    if(question != null) {
+                        JSONObject jsonObject = new JSONObject();
+                        try {
+                            jsonObject.put("id", question.getKey());
+                            jsonObject.put("room", mRoomName);
+                        } catch (JSONException e) {}
+                        mSocket.emit("new post", jsonObject);
+                        mQuestionAdapter.insertQuestion(question, 0);
+                    }
+                    else {
+                        Log.e("Empty Response Body", "Null Question");
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+
+                }
+            });
             inputText.setText("");
         }
     }
 
-    public void updateEcho(String key) {
-        if (dbutil.contains(key)) {
-            Log.e("Dupkey", "Key is already in the DB!");
-            return;
-        }
-
-        final Firebase echoRef = mFirebaseRef.child(key).child("echo");
-        echoRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long echoValue = (Long) dataSnapshot.getValue();
-                        Log.e("Echo update:", "" + echoValue);
-
-                        echoRef.setValue(echoValue + 1);
-
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-                }
-        );
-
-        final Firebase orderRef = mFirebaseRef.child(key).child("order");
-        orderRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long orderValue = (Long) dataSnapshot.getValue();
-                        Log.e("Order update:", "" + orderValue);
-
-                        orderRef.setValue(orderValue + 1);
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-                }
-        );
-
-        // Update SQLite DB
-        dbutil.put(key);
-
-    }
-
-    public void updateDislikes(String key) {
-        if (dbutil.contains(key)) {
-            Log.e("Dupkey", "Key is already in the DB!");
-            return;
-        }
-
-        final Firebase dislikesRef = mFirebaseRef.child(key).child("dislikes");
-        dislikesRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long dislikesValue = (Long) dataSnapshot.getValue();
-                        Log.e("Echo update:", "" + dislikesValue);
-
-                        dislikesRef.setValue(dislikesValue + 1);
-
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-                }
-        );
-
-        final Firebase orderRef = mFirebaseRef.child(key).child("order");
-        orderRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long orderValue = (Long) dataSnapshot.getValue();
-                        Log.e("Order update:", "" + orderValue);
-
-                        orderRef.setValue(orderValue - 1);
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-                }
-        );
-
-        // Update SQLite DB
-        dbutil.put(key);
-
-    }
 
     public void enterReply(String key) {
         Intent intent = new Intent(this, ReplyActivity.class);
-        intent.putExtra("questionRef", FIREBASE_URL+roomName+"/questions/"+key);
+        intent.putExtra("questionKey", key);
         startActivity(intent);
     }
 
@@ -273,58 +300,70 @@ public class MainActivity extends ListActivity {
         finish();
     }
 
-    public void Reset_Search(View view){
-        StartTime="";
-        EndTime="";
-        Content="";
-        ListView listView = getListView();
-        QuestionListAdapter temChatListAdapter = new QuestionListAdapter(
-                mFirebaseRef.orderByChild("echo").limitToFirst(200),
-                this, R.layout.question, roomName);
-        listView.setAdapter(temChatListAdapter);
-    }
-
-
 
     public void Search(View view) {
         Intent intent = new Intent(this, SearchActivity.class);
-        intent.putExtra("Room Name", roomName);
+        intent.putExtra("Room Name", mRoomName);
         startActivityForResult(intent, 1);
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(final int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
-            String newStartTime = data.getExtras().getString("StartTime");
-            String newEndTime = data.getExtras().getString("EndTime");
-            String newContent = data.getExtras().getString("Content");
-            StartTime = newStartTime;
-            EndTime = newEndTime;
-            Content = newContent;
-        }
+            long startTime = TimeDisplay.toTimestamp(data.getExtras().getString("StartTime"));
+            long endTime = TimeDisplay.toTimestamp(data.getExtras().getString("EndTime"));
+            String content = data.getExtras().getString("Content");
+            final Map<String, String> query = new ArrayMap<>();
+            query.put("roomName", mRoomName);
+            query.put("startTime", String.valueOf(startTime));
+            query.put("endTime", String.valueOf(endTime));
+            query.put("content", content);
+            mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
+                @Override
+                public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
+                    List<Question> questions = response.body();
+                    if(questions != null) {
+                        mQuestionAdapter.setQuestionList(questions);
+                    }
+                    else {
+                        Log.e("Empty Response Body", "Null Question List");
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+
+                }
+            });
+         }
     }
+
     @Override
     public void startActivity(Intent intent) {
         if (TextUtils.equals(intent.getAction(), Intent.ACTION_VIEW)) {
-            //Intent i = new Intent(this,MainActivity.class);
-            Intent i = new Intent(this,SearchActivity.class);
             Uri uri = intent.getData();
             //strip off hashtag from the URI
             String tag=uri.toString();
-           /* System.out.println(tag.substring(3));
-            i.putExtra("StartTime", "The Start");
-            i.putExtra("EndTime", "Now");
-            i.putExtra("Content", "#test");
-            i.putExtra("Room Name", roomName);
+            //System.out.println(tag.substring(3));
+            Map<String, String> query = new ArrayMap<>();
+            query.put("roomName", mRoomName);
+            query.put("content", tag.substring(3));
+            mAPI.getQuestionList(query).enqueue(new Callback<List<Question>>() {
+                @Override
+                public void onResponse(Response<List<Question>> response, Retrofit retrofit) {
+                    List<Question> questions = response.body();
+                    if (questions != null) {
+                        mQuestionAdapter.setQuestionList(questions);
+                    } else {
+                        Log.e("Empty Response Body", "Null Question List");
+                    }
+                }
 
+                @Override
+                public void onFailure(Throwable t) {
 
-            //MainActivity.this.setResult(RESULT_OK, i);
-            startActivity(i);*/
-            System.out.println(tag.substring(3).length());
-            i.putExtra("hash",tag.substring(3)+ " ");
-            intent.putExtra("Room Name", roomName);
-            startActivityForResult(i, 1);
-            //startActivity(i);
+                }
+            });
         }
         else {
             super.startActivity(intent);

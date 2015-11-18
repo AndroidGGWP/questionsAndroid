@@ -1,21 +1,34 @@
 package hk.ust.cse.hunkim.questionroom.question;
 
+import android.databinding.BaseObservable;
+import android.databinding.Bindable;
+import android.util.Log;
+
+import com.google.gson.annotations.SerializedName;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import hk.ust.cse.hunkim.questionroom.FirebaseListAdapter;
+import hk.ust.cse.hunkim.questionroom.BR;
 
 /**
  * Created by hunkim on 7/16/15.
  */
-public class Question implements Comparable<Question> {
+public class Question extends BaseObservable {
 
     /**
      * Must be synced with firebase JSON structure
      * Each must have getters
      */
+    @SerializedName("_id")
     private String key;
+
+    private String roomName;
+    private String username;
+    @SerializedName("anonymous")
+    private boolean isAnonymous;
+    private String image;
     private String wholeMsg;
     private String head;
     private String headLastChar;
@@ -24,34 +37,40 @@ public class Question implements Comparable<Question> {
     private boolean completed;
     private long timestamp;
     private String tags;
-    private int echo;
-    private int dislikes;
+    public int echo;
+
+    @SerializedName("hate")
+    public int dislikes;
+
     private int order;
-    private boolean newQuestion;
-    private int numOfReplies;
+
+    @SerializedName("reply")
     private List<Reply> replies;
 
-    public String getDateString() {
-        return dateString;
-    }
-
-    private String dateString;
-
-    public String getTrustedDesc() {
-        return trustedDesc;
-    }
-
-    private String trustedDesc;
-
-    // Required default constructor for Firebase object mapping
-    @SuppressWarnings("unused")
-    private Question() {
-    }
 
     /**
      * Set question from a String message
      * @param message string message
      */
+    public Question(String message, String roomName, String username, boolean isAnonymous) {
+        this.wholeMsg = message;
+        this.echo = 0;
+        this.dislikes = 0;
+        this.head = getFirstSentence(message).trim();
+        this.desc = "";
+        this.roomName = roomName;
+        if (this.head.length() < message.length()) {
+            this.desc = message.substring(this.head.length());
+        }
+
+        // get the last char
+        this.headLastChar = head.substring(head.length() - 1);
+        this.timestamp = new Date().getTime();
+        this.replies = new ArrayList<Reply>();
+        this.username = username;
+        this.isAnonymous = isAnonymous;
+    }
+
     public Question(String message) {
         this.wholeMsg = message;
         this.echo = 0;
@@ -66,9 +85,10 @@ public class Question implements Comparable<Question> {
         this.headLastChar = head.substring(head.length() - 1);
 
         this.timestamp = new Date().getTime();
-        this.numOfReplies = 0;
         this.replies = new ArrayList<Reply>();
         this.replies.add(new Reply(""));
+        this.username = "Anonymous";
+        this.isAnonymous = false;
     }
 
     /**
@@ -110,10 +130,28 @@ public class Question implements Comparable<Question> {
         return desc;
     }
 
+    @Bindable
+    public String getMsgString() {
+        String msgString = "";
+        if (isNewQuestion()) {
+            msgString += "<font color=red>NEW </font>";
+        }
+        String newHead = getHead();
+        String newDesc = getDesc();
+        newHead = newHead.replace("<", "&lt;");
+        newHead = newHead.replace(">", "&gt;");
+        newDesc = newDesc.replace("<", "&lt;");
+        newDesc = newDesc.replace(">", "&gt;");
+        msgString += "<B>" + newHead + "</B>" + newDesc;
+        return msgString;
+    }
+
+    @Bindable
     public int getEcho() {
         return echo;
     }
 
+    @Bindable
     public int getDislikes() { return dislikes; }
 
     public String getWholeMsg() {
@@ -144,17 +182,14 @@ public class Question implements Comparable<Question> {
         return order;
     }
 
-    public boolean isNewQuestion() {
-        return newQuestion;
+    public int getNumOfReplies() {
+        if(replies == null) {
+            return 0;
+        }
+        return  replies.size();
     }
-
-    public int getNumOfReplies() { return numOfReplies; }
-
     public List<Reply> getReplies() { return replies; }
 
-    public void updateNewQuestion() {
-        newQuestion = this.timestamp > new Date().getTime() - 180000;
-    }
 
     public String getKey() {
         return key;
@@ -164,38 +199,26 @@ public class Question implements Comparable<Question> {
         this.key = key;
     }
 
-    /**
-     * New one/high echo goes bottom
-     * @param other other chat
-     * @return order
-     */
-    @Override
-    public int compareTo(Question other) {
-        // Push new on top
-        other.updateNewQuestion(); // update NEW button
-        this.updateNewQuestion();
+    public void setEcho(int echo) {
+        this.echo = echo;
+        notifyPropertyChanged(BR.echo);
+    }
 
-        if (this.newQuestion != other.newQuestion) {
-            return this.newQuestion ? 1 : -1; // this is the winner
-        }
-        if (this.echo != other.echo){
-            return this.echo > other.echo? 1 : -1;
-        }
-        if (this.dislikes != other.dislikes){
-            return this.dislikes < other.dislikes? 1 : -1;
-        }
-        if (this.timestamp != other.timestamp){
-            return this.timestamp > other.timestamp? 1 : -1;
-        }
-        return 0;
-        /*
-        if (this.echo == other.echo) {
-            if (other.timestamp == this.timestamp) {
-                return 0;
-            }
-            return other.timestamp > this.timestamp ? -1 : 1;
-        }
-        return (this.echo - other.echo);*/
+    public void setOrder(int order) {
+        this.order = order;
+    }
+
+    public void setDislikes(int dislikes) {
+        this.dislikes = dislikes;
+        notifyPropertyChanged(BR.dislikes);
+    }
+
+    public void setReplies(List<Reply> replies) {
+        this.replies = replies;
+    }
+
+    public boolean isNewQuestion() {
+        return (this.timestamp > new Date().getTime() - 180000);
     }
 
     @Override

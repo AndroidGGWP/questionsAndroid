@@ -2,29 +2,30 @@ package hk.ust.cse.hunkim.questionroom;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.media.Image;
+import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
-
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
+import hk.ust.cse.hunkim.questionroom.databinding.ActivityReplyBinding;
+import hk.ust.cse.hunkim.questionroom.question.Question;
 import hk.ust.cse.hunkim.questionroom.question.Reply;
+import retrofit.Callback;
+import retrofit.Response;
+import retrofit.Retrofit;
 
 public class ReplyActivity extends Activity {
+
+    private RESTfulAPI mAPI = RESTfulAPI.getInstance();
+    private ActivityReplyBinding mBinding;
+    private ReplyAdapter mReplyAdapter;
+    private String mQuestionKey;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,65 +35,32 @@ public class ReplyActivity extends Activity {
         Intent intent = getIntent();
         assert (intent != null);
 
-        Bundle extras = getIntent().getExtras();
-        String questionURLString = extras.getString("questionRef");
-        final Firebase mQuestionRef = new Firebase(questionURLString);
+        mBinding = DataBindingUtil.setContentView(this, R.layout.activity_reply);
+        mReplyAdapter = new ReplyAdapter(this, new ArrayList<Reply>());
+        ListView replyListView = (ListView) findViewById(R.id.replyList);
+        replyListView.setAdapter(mReplyAdapter);
 
-        //Get the question in this reply room
-        final Firebase questionMessageRef = mQuestionRef.child("wholeMsg");
-        final TextView question = (TextView) findViewById(R.id.question);
-
-        //time, echo, dislikes
-
-        final TextView questionTime = (TextView) findViewById(R.id.replyQuestionTimestamp);
-        //final TextView questionEchonum = (TextView) findViewById(R.id.replyQuestionEchonum);
-        //final TextView questionDislikes = (TextView) findViewById(R.id.replyQuestionDislikenum);
-
-        mQuestionRef.addValueEventListener(new ValueEventListener() {
+        mQuestionKey = intent.getExtras().getString("questionKey");
+        mAPI.getQuestion(mQuestionKey).enqueue(new Callback<Question>() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                String questionTitle = (String) dataSnapshot.child("wholeMsg").getValue();
-                question.setText(questionTitle);
-                long questionTimestamp = (long) dataSnapshot.child("timestamp").getValue();
-                TimeDisplay questionTimeDisplay = new TimeDisplay(questionTimestamp);
-                questionTime.setText(questionTimeDisplay.getOutputTime());
-                //questionEchonum.setText(""+((long) dataSnapshot.child("echo").getValue()));
-                //questionDislikes.setText(""+((long) dataSnapshot.child("dislikes").getValue()));
-            }
-
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {
-
-            }
-        });
-
-        //Get the replies to the question
-        final Firebase mReplyRef = mQuestionRef.child("replies");
-
-        mReplyRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                //String[][] replyTexts = new String[((int) dataSnapshot.getChildrenCount()) - 1][2];
-                Reply[] replyListDisplay = new Reply[((int) dataSnapshot.getChildrenCount()) - 1];
-                ArrayList<HashMap> replyList = (ArrayList<HashMap>) dataSnapshot.getValue();
-                for (int i = 0; i < (int) dataSnapshot.getChildrenCount() - 1; i++) {
-                    TimeDisplay timeDisplay = new TimeDisplay((long) replyList.get(i + 1).get("timestamp"));
-                    //replyTexts[i][0] = replyList.get(i + 1).get("content").toString();
-                    //replyTexts[i][1] = timeDisplay.getOutputTime();
-                    replyListDisplay[i] = new Reply(replyList.get(i + 1).get("content").toString(), timeDisplay.getOutputTime());
+            public void onResponse(Response<Question> response, Retrofit retrofit) {
+                Question question = response.body();
+                if(question != null) {
+                    mBinding.setQuestion(question);
+                    mReplyAdapter.setReplyList(question.getReplies());
                 }
-                ListAdapter replyListAdapter = new ReplyAdapter(getBaseContext(), replyListDisplay);
-                ListView replyListView = (ListView) findViewById(R.id.replyList);
-                replyListView.setAdapter(replyListAdapter);
+                else {
+                    Log.e("Empty Response Body", "Null Question");
+                    //mBinding.setQuestion(new Question("", "all"));
+                    mBinding.setQuestion(new Question("", "all",  "Anonymous", false));
+                }
             }
 
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
+            public void onFailure(Throwable t) {
 
             }
         });
-
-
 
         //Reply to the question
         Button replyButton = (Button) findViewById(R.id.replyButton);
@@ -101,57 +69,35 @@ public class ReplyActivity extends Activity {
         replyButton.setOnClickListener(
                 new Button.OnClickListener() {
                     public void onClick(View view) {
-                        String reply = replyText.getText().toString();
+                        String replyContent = replyText.getText().toString();
                         ReplyActivity r = (ReplyActivity) view.getContext();
-                        r.sendReply(mQuestionRef, reply);
+                        //Reply reply = new Reply(replyContent, mQuestionKey);
+                        Reply reply = new Reply(replyContent, mQuestionKey, "Anonymous", false);
+                        r.sendReply(reply);
                         replyText.setText("");
                     }
                 }
         );
-
     }
 
-    public void sendReply(Firebase mQuestionRef, final String replyContent){
-
-        if (!replyContent.equals("")) {
-            updateNumOfReplies(mQuestionRef);
-
-            final Firebase mRepliesRef = mQuestionRef.child("replies");
-            mRepliesRef.addListenerForSingleValueEvent(
-                    new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            List<Reply> repliesValue = (List<Reply>) dataSnapshot.getValue();
-                            repliesValue.add(new Reply(replyContent));
-                            mRepliesRef.setValue(repliesValue);
-                        }
-
-                        @Override
-                        public void onCancelled(FirebaseError firebaseError) {
-
-                        }
-                    }
-            );
-        }
-    }
-
-    public void updateNumOfReplies(Firebase mQuestionRef) {
-        final Firebase numOfRepliesRef = mQuestionRef.child("numOfReplies");
-
-        numOfRepliesRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Long numOfRepliesValue = (Long) dataSnapshot.getValue();
-                        numOfRepliesRef.setValue(numOfRepliesValue + 1);
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
+    public void sendReply(Reply reply){
+        mAPI.saveReply(reply).enqueue(new Callback<Reply>() {
+            @Override
+            public void onResponse(Response<Reply> response, Retrofit retrofit) {
+                Reply reply = response.body();
+                if (reply != null) {
+                    mReplyAdapter.add(reply);
                 }
-        );
+                else {
+                    Log.e("Empty Response Body", "Null reply");
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        });
     }
 
 }
